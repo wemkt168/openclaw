@@ -1,0 +1,38 @@
+{
+    // OpenClaw Zeabur 配置示例
+    // 复制此文件为 openclaw.json 并修改配置
+    // 文档: https://docs.openclaw.ai/gateway/configuration
+    // AI 模型配置 - 使用 OpenRouter
+  agent: {
+        // 主力模型 - Claude Sonnet 4 (性价比最佳)
+    model: "anthropic/claude-sonnet-4",
+        // 备用模型 - Gemini Flash (便宜快速)
+    fallbackModel: "google/gemini-2.0-flash-001",
+    },
+    // Gateway 配置
+  gateway: {
+        // Zeabur 需要 lan 模式才能从外部访问
+    bind: "lan",
+    port: 18789,
+    mode: "local",
+    },
+    // Agent 权限配置 - 最大自主权
+  agents: {
+    defaults: {
+            // 关闭沙盒限制 - 允许完全自主工作
+      sandbox: {
+        mode: "off",
+            },
+      workspace: "/home/node/.openclaw/workspace",
+        },
+    },
+    // 工具配置
+  tools: {
+    browser: {
+      enabled: true,
+        },
+    exec: {
+      enabled: true,
+        },
+    },
+}
