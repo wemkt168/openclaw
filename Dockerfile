@@ -42,6 +42,6 @@ ENV OPENCLAW_STATE_DIR=/root/.openclaw
 
 EXPOSE 18789
 
-# Start gateway - using official recommended CMD format
-# Note: Do NOT set OPENCLAW_GATEWAY_BIND env var when using --bind flag
-CMD ["node", "dist/index.js", "gateway", "--allow-unconfigured", "--bind", "lan", "--port", "18789"]
+# Start gateway with error capture
+# If startup fails, wait 30 seconds so error logs can be viewed
+CMD ["sh", "-c", "echo 'Starting OpenClaw Gateway...' && node dist/index.js gateway --allow-unconfigured --bind lan --port 18789 2>&1 || (echo 'ERROR: Application startup failed!' && sleep 30)"]
