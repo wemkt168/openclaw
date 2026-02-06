@@ -54,8 +54,7 @@ USER node
 # Expose port 8080 for Zeabur reverse proxy
 EXPOSE 8080
 
-# Startup command with volume initialization
-# 1. Check if config exists in volume (/home/node/.openclaw/openclaw.json)
-# 2. If not, copy from defaults (/app/openclaw.defaults.json)
-# 3. Start gateway
-CMD ["sh", "-c", "if [ ! -f /home/node/.openclaw/openclaw.json ]; then echo 'Initializing config volume...'; cp /app/openclaw.defaults.json /home/node/.openclaw/openclaw.json; fi && node dist/index.js gateway --allow-unconfigured --bind lan --port 8080"]
+# Startup command with config auto-repair
+# 1. Run ensure-zeabur-config.js to patch/initialize persistent config
+# 2. Start gateway
+CMD ["sh", "-c", "node scripts/ensure-zeabur-config.js && node dist/index.js gateway --allow-unconfigured --bind lan --port 8080"]
