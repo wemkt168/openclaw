@@ -1,4 +1,8 @@
 {
+    "env": {
+        "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY}",
+        "TELEGRAM_BOT_TOKEN": "${TELEGRAM_BOT_TOKEN}"
+    },
     "agents": {
         "defaults": {
             "models": {
@@ -19,18 +23,13 @@
                     "openrouter/openai/gpt-4o"
                 ]
             },
-            "workspace": "/home/node/.openclaw/workspace",
+            "workspace": "/root/.openclaw/workspace",
             "sandbox": {
                 "mode": "off"
             },
             "thinkingDefault": "low",
             "elevatedDefault": "on",
             "timeoutSeconds": 1800,
-            "heartbeat": {
-                "every": "30m",
-                "target": "last",
-                "prompt": "检查 HEARTBEAT.md 是否有待办任务。"
-            },
             "subagents": {
                 "model": "openrouter/google/gemini-2.0-flash-001",
                 "maxConcurrent": 2

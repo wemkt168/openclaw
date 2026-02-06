@@ -1,36 +1,28 @@
 #!/bin/sh
 # OpenClaw Zeabur startup script
-# This script verifies config and starts the gateway
+# Based on official documentation: https://docs.openclaw.ai
 
 set -e
 
-echo "=== OpenClaw Startup Script ==="
-echo "Checking config file..."
+echo "=== OpenClaw Zeabur Startup ==="
+echo "State dir: $OPENCLAW_STATE_DIR"
+echo "Config path: $OPENCLAW_CONFIG_PATH"
 
-# Check if config file exists
-CONFIG_FILE="${OPENCLAW_CONFIG_PATH:-/root/.openclaw/openclaw.json}"
-echo "Config path: $CONFIG_FILE"
-
-if [ -f "$CONFIG_FILE" ]; then
-    echo "Config file exists!"
-    echo "First 20 lines of config:"
-    head -20 "$CONFIG_FILE"
+# Verify config file exists
+if [ -f "$OPENCLAW_CONFIG_PATH" ]; then
+    echo "Config file found"
 else
-    echo "WARNING: Config file not found at $CONFIG_FILE"
-    ls -la /root/.openclaw/ 2>/dev/null || echo "Directory /root/.openclaw/ does not exist"
+    echo "WARNING: Config file not found at $OPENCLAW_CONFIG_PATH"
 fi
 
+# Verify required environment variables
 echo ""
-echo "Environment variables:"
+echo "Environment check:"
 echo "  OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:+[SET]}"
 echo "  OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN:+[SET]}"
 echo "  TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:+[SET]}"
 echo ""
 
-# Set the model using openclaw CLI before starting gateway
-echo "Setting default model to openrouter/anthropic/claude-sonnet-4..."
-node dist/index.js models set openrouter/anthropic/claude-sonnet-4 || echo "Model set failed (may be first run)"
-
-echo ""
+# Start gateway
 echo "Starting OpenClaw Gateway..."
 exec node dist/index.js gateway --allow-unconfigured --bind lan --port 18789
