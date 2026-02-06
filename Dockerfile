@@ -41,20 +41,16 @@ RUN chown -R node:node /app
 RUN mkdir -p /root/.openclaw
 COPY openclaw.zeabur.json /root/.openclaw/openclaw.json
 
-# Set config path environment variable
-ENV OPENCLAW_CONFIG_PATH=/root/.openclaw/openclaw.json
+# Copy startup script
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
 
-# Security hardening: Run as non-root user
-# The node:22-bookworm image includes a 'node' user (uid 1000)
-# This reduces the attack surface by preventing container escape via root privileges
-USER node
+# Set environment variables
+ENV OPENCLAW_CONFIG_PATH=/root/.openclaw/openclaw.json
+ENV OPENCLAW_STATE_DIR=/root/.openclaw
 
 EXPOSE 18789
 
-# Start gateway server with default config.
-# Binds to loopback (127.0.0.1) by default for security.
-#
-# For container platforms requiring external health checks:
-#   1. Set OPENCLAW_GATEWAY_TOKEN or OPENCLAW_GATEWAY_PASSWORD env var
-#   2. Override CMD: ["node","dist/index.js","gateway","--allow-unconfigured","--bind","lan"]
-CMD ["node", "dist/index.js", "gateway", "--allow-unconfigured", "--bind", "lan", "--port", "18789"]
+# Start gateway via startup script (which sets model before starting)
+CMD ["/app/docker-entrypoint.sh"]
+
