@@ -3,14 +3,8 @@
         "type": "docker",
         "dockerfile": "Dockerfile"
     },
-    "start": {
-        "command": "node dist/index.js gateway --allow-unconfigured --bind lan --port 18789"
-    },
     "expose": {
-        "port": 18789
-    },
-    "env": {
-        "NODE_ENV": "production",
-        "OPENCLAW_GATEWAY_BIND": "lan"
+        "port": 18789,
+        "protocol": "http"
     }
 }
