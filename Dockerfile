@@ -51,6 +51,17 @@ USER node
 
 EXPOSE 18789
 
-# Start gateway with error capture for debugging
-# Based on official docker-compose.yml command format
-CMD ["sh", "-c", "echo 'Starting OpenClaw Gateway...' && node dist/index.js gateway --allow-unconfigured --bind lan --port 18789 2>&1 || (echo 'ERROR: Application startup failed!' && sleep 30)"]
+# Start gateway with detailed error capture for debugging
+CMD ["sh", "-c", "\
+  echo '=== OpenClaw Startup Debug ===' && \
+  echo 'Current user:' $(whoami) && \
+  echo 'HOME:' $HOME && \
+  echo 'PWD:' $(pwd) && \
+  echo '--- Checking files ---' && \
+  ls -la /app/dist/index.js 2>&1 || echo 'ERROR: dist/index.js not found!' && \
+  ls -la /home/node/.openclaw/ 2>&1 || echo 'ERROR: config dir not found!' && \
+  echo '--- Starting gateway ---' && \
+  set -x && \
+  node dist/index.js gateway --allow-unconfigured --bind lan --port 18789 2>&1 || \
+  (echo 'ERROR: Application startup failed! Exit code:' $?; sleep 60) \
+  "]
