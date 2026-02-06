@@ -40,9 +40,9 @@
                 "id": "master",
                 "default": true,
                 "identity": {
-                    "name": "OpenClaw",
-                    "theme": "自主进化的 AI 开发者",
-                    "emoji": "🦞"
+                    "name": "Teddy Power",
+                    "theme": "AI 商业伙伴 / 规划与执行方",
+                    "emoji": ""
                 }
             }
         ]
