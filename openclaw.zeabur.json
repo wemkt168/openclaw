@@ -93,6 +93,9 @@
             },
             "fetch": {
                 "enabled": true
+            },
+            "browser": {
+                "enabled": true
             }
         }
     },
