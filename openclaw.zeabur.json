@@ -1,0 +1,98 @@
+{
+    "agents": {
+        "defaults": {
+            "models": {
+                "openrouter/anthropic/claude-sonnet-4": {
+                    "alias": "sonnet"
+                },
+                "openrouter/google/gemini-2.0-flash-001": {
+                    "alias": "flash"
+                },
+                "openrouter/openai/gpt-4o": {
+                    "alias": "gpt4o"
+                }
+            },
+            "model": {
+                "primary": "openrouter/anthropic/claude-sonnet-4",
+                "fallbacks": [
+                    "openrouter/google/gemini-2.0-flash-001",
+                    "openrouter/openai/gpt-4o"
+                ]
+            },
+            "workspace": "/home/node/.openclaw/workspace",
+            "sandbox": {
+                "mode": "off"
+            },
+            "thinkingDefault": "low",
+            "elevatedDefault": "on",
+            "timeoutSeconds": 1800,
+            "heartbeat": {
+                "every": "30m",
+                "target": "last",
+                "prompt": "检查 HEARTBEAT.md 是否有待办任务。"
+            },
+            "subagents": {
+                "model": "openrouter/google/gemini-2.0-flash-001",
+                "maxConcurrent": 2
+            }
+        },
+        "list": [
+            {
+                "id": "master",
+                "default": true,
+                "identity": {
+                    "name": "OpenClaw",
+                    "theme": "自主进化的 AI 开发者",
+                    "emoji": "🦞"
+                }
+            }
+        ]
+    },
+    "gateway": {
+        "bind": "lan",
+        "port": 18789
+    },
+    "channels": {
+        "telegram": {
+            "enabled": true,
+            "botToken": "${TELEGRAM_BOT_TOKEN}",
+            "dmPolicy": "allowlist",
+            "allowFrom": [
+                "tg:7322349199"
+            ],
+            "groups": {
+                "*": {
+                    "requireMention": true
+                }
+            }
+        }
+    },
+    "tools": {
+        "profile": "full",
+        "elevated": {
+            "enabled": true,
+            "allowFrom": {
+                "telegram": [
+                    "tg:7322349199"
+                ]
+            }
+        },
+        "web": {
+            "search": {
+                "enabled": true
+            },
+            "fetch": {
+                "enabled": true
+            }
+        }
+    },
+    "commands": {
+        "native": "auto",
+        "text": true,
+        "bash": true,
+        "config": true
+    },
+    "logging": {
+        "level": "info"
+    }
+}

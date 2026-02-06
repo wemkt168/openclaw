@@ -35,6 +35,15 @@ ENV PORT=18789
 # Allow non-root user to write temp files during runtime/tests.
 RUN chown -R node:node /app
 
+# Copy Zeabur-specific config file with correct OpenRouter model IDs
+# This config uses three-part format: openrouter/anthropic/claude-sonnet-4
+RUN mkdir -p /home/node/.openclaw
+COPY openclaw.zeabur.json /home/node/.openclaw/openclaw.json
+RUN chown -R node:node /home/node/.openclaw
+
+# Set config path environment variable
+ENV OPENCLAW_CONFIG_PATH=/home/node/.openclaw/openclaw.json
+
 # Security hardening: Run as non-root user
 # The node:22-bookworm image includes a 'node' user (uid 1000)
 # This reduces the attack surface by preventing container escape via root privileges
