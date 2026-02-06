@@ -45,13 +45,8 @@ ENV TERM=xterm-256color
 # Reduce memory usage for smaller instances
 ENV NODE_OPTIONS="--max-old-space-size=1536"
 
-# Create config directory and copy Zeabur-specific config
-RUN mkdir -p /home/node/.openclaw && \
-  chown -R node:node /home/node
-COPY --chown=node:node openclaw.zeabur.json /home/node/.openclaw/openclaw.json
-
-# Verify config file exists during build
-RUN ls -la /home/node/.openclaw/ && cat /home/node/.openclaw/openclaw.json | head -5
+# Copy config to a safe location for volume initialization
+COPY openclaw.zeabur.json /app/openclaw.defaults.json
 
 # Security: Run as non-root user (per official Dockerfile pattern)
 USER node
@@ -59,8 +54,8 @@ USER node
 # Expose port 8080 for Zeabur reverse proxy
 EXPOSE 8080
 
-# Startup command with port 8080 for Zeabur compatibility
-# --allow-unconfigured: start without full onboarding
-# --bind lan: bind to 0.0.0.0 (required for reverse proxy access)
-# Note: --bind lan requires OPENCLAW_GATEWAY_TOKEN env var for security
-CMD ["node", "dist/index.js", "gateway", "--allow-unconfigured", "--bind", "lan", "--port", "8080"]
+# Startup command with volume initialization
+# 1. Check if config exists in volume (/home/node/.openclaw/openclaw.json)
+# 2. If not, copy from defaults (/app/openclaw.defaults.json)
+# 3. Start gateway
+CMD ["sh", "-c", "if [ ! -f /home/node/.openclaw/openclaw.json ]; then echo 'Initializing config volume...'; cp /app/openclaw.defaults.json /home/node/.openclaw/openclaw.json; fi && node dist/index.js gateway --allow-unconfigured --bind lan --port 8080"]
