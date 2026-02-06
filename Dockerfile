@@ -37,12 +37,12 @@ RUN chown -R node:node /app
 
 # Copy Zeabur-specific config file with correct OpenRouter model IDs
 # This config uses three-part format: openrouter/anthropic/claude-sonnet-4
-RUN mkdir -p /home/node/.openclaw
-COPY openclaw.zeabur.json /home/node/.openclaw/openclaw.json
-RUN chown -R node:node /home/node/.openclaw
+# NOTE: Zeabur runs as root, so we copy to /root/.openclaw/ (not /home/node/)
+RUN mkdir -p /root/.openclaw
+COPY openclaw.zeabur.json /root/.openclaw/openclaw.json
 
 # Set config path environment variable
-ENV OPENCLAW_CONFIG_PATH=/home/node/.openclaw/openclaw.json
+ENV OPENCLAW_CONFIG_PATH=/root/.openclaw/openclaw.json
 
 # Security hardening: Run as non-root user
 # The node:22-bookworm image includes a 'node' user (uid 1000)
