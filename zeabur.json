@@ -4,7 +4,7 @@
         "dockerfile": "Dockerfile"
     },
     "expose": {
-        "port": 18789,
+        "port": 8080,
         "protocol": "http"
     }
 }

@@ -30,15 +30,20 @@ ENV OPENCLAW_PREFER_PNPM=1
 RUN pnpm ui:build
 
 # ============================================
-# Runtime configuration (based on official docker-compose.yml)
+# Runtime configuration
+# Based on official docker-compose.yml + Fly.io deployment guide
 # ============================================
 
 ENV NODE_ENV=production
-ENV PORT=18789
+# Use port 8080 - Zeabur's default expected port
+ENV PORT=8080
 
 # CRITICAL: Set HOME to /home/node per official docker-compose.yml
 ENV HOME=/home/node
 ENV TERM=xterm-256color
+
+# Reduce memory usage for smaller instances
+ENV NODE_OPTIONS="--max-old-space-size=1536"
 
 # Create config directory and copy Zeabur-specific config
 RUN mkdir -p /home/node/.openclaw && \
@@ -51,8 +56,11 @@ RUN ls -la /home/node/.openclaw/ && cat /home/node/.openclaw/openclaw.json | hea
 # Security: Run as non-root user (per official Dockerfile pattern)
 USER node
 
-EXPOSE 18789
+# Expose port 8080 for Zeabur reverse proxy
+EXPOSE 8080
 
-# Simple startup command matching official docker-compose.yml format
-# Note: --allow-unconfigured allows starting without full onboarding
-CMD ["node", "dist/index.js", "gateway", "--allow-unconfigured", "--bind", "lan", "--port", "18789"]
+# Startup command with port 8080 for Zeabur compatibility
+# --allow-unconfigured: start without full onboarding
+# --bind lan: bind to 0.0.0.0 (required for reverse proxy access)
+# Note: --bind lan requires OPENCLAW_GATEWAY_TOKEN env var for security
+CMD ["node", "dist/index.js", "gateway", "--allow-unconfigured", "--bind", "lan", "--port", "8080"]
