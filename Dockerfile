@@ -29,19 +29,28 @@ RUN OPENCLAW_A2UI_SKIP_MISSING=1 pnpm build
 ENV OPENCLAW_PREFER_PNPM=1
 RUN pnpm ui:build
 
+# ============================================
+# Runtime configuration (based on official docker-compose.yml)
+# ============================================
+
 ENV NODE_ENV=production
 ENV PORT=18789
 
-# Copy Zeabur-specific config file with correct OpenRouter model IDs
-# Based on official docs: https://docs.openclaw.ai/providers/openrouter
-RUN mkdir -p /root/.openclaw
-COPY openclaw.zeabur.json /root/.openclaw/openclaw.json
+# CRITICAL: Set HOME to /home/node per official docker-compose.yml
+# This is required for OpenClaw to find config at ~/.openclaw/
+ENV HOME=/home/node
 
-# Set state directory for OpenClaw
-ENV OPENCLAW_STATE_DIR=/root/.openclaw
+# Create config directory and copy Zeabur-specific config
+# Path: /home/node/.openclaw/openclaw.json (matches official $HOME/.openclaw)
+RUN mkdir -p /home/node/.openclaw
+COPY openclaw.zeabur.json /home/node/.openclaw/openclaw.json
+RUN chown -R node:node /home/node
+
+# Security: Run as non-root user (per official Dockerfile pattern)
+USER node
 
 EXPOSE 18789
 
-# Start gateway with error capture
-# If startup fails, wait 30 seconds so error logs can be viewed
+# Start gateway with error capture for debugging
+# Based on official docker-compose.yml command format
 CMD ["sh", "-c", "echo 'Starting OpenClaw Gateway...' && node dist/index.js gateway --allow-unconfigured --bind lan --port 18789 2>&1 || (echo 'ERROR: Application startup failed!' && sleep 30)"]
