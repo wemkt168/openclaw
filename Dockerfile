@@ -37,31 +37,22 @@ ENV NODE_ENV=production
 ENV PORT=18789
 
 # CRITICAL: Set HOME to /home/node per official docker-compose.yml
-# This is required for OpenClaw to find config at ~/.openclaw/
 ENV HOME=/home/node
+ENV TERM=xterm-256color
 
 # Create config directory and copy Zeabur-specific config
-# Path: /home/node/.openclaw/openclaw.json (matches official $HOME/.openclaw)
-RUN mkdir -p /home/node/.openclaw
-COPY openclaw.zeabur.json /home/node/.openclaw/openclaw.json
-RUN chown -R node:node /home/node
+RUN mkdir -p /home/node/.openclaw && \
+  chown -R node:node /home/node
+COPY --chown=node:node openclaw.zeabur.json /home/node/.openclaw/openclaw.json
+
+# Verify config file exists during build
+RUN ls -la /home/node/.openclaw/ && cat /home/node/.openclaw/openclaw.json | head -5
 
 # Security: Run as non-root user (per official Dockerfile pattern)
 USER node
 
 EXPOSE 18789
 
-# Start gateway with detailed error capture for debugging
-CMD ["sh", "-c", "\
-  echo '=== OpenClaw Startup Debug ===' && \
-  echo 'Current user:' $(whoami) && \
-  echo 'HOME:' $HOME && \
-  echo 'PWD:' $(pwd) && \
-  echo '--- Checking files ---' && \
-  ls -la /app/dist/index.js 2>&1 || echo 'ERROR: dist/index.js not found!' && \
-  ls -la /home/node/.openclaw/ 2>&1 || echo 'ERROR: config dir not found!' && \
-  echo '--- Starting gateway ---' && \
-  set -x && \
-  node dist/index.js gateway --allow-unconfigured --bind lan --port 18789 2>&1 || \
-  (echo 'ERROR: Application startup failed! Exit code:' $?; sleep 60) \
-  "]
+# Simple startup command matching official docker-compose.yml format
+# Note: --allow-unconfigured allows starting without full onboarding
+CMD ["node", "dist/index.js", "gateway", "--allow-unconfigured", "--bind", "lan", "--port", "18789"]
