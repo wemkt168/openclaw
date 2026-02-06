@@ -49,7 +49,13 @@
     },
     "gateway": {
         "bind": "lan",
-        "port": 18789
+        "port": 8080,
+        "controlUi": {
+            "allowInsecureAuth": true
+        },
+        "auth": {
+            "mode": "token"
+        }
     },
     "channels": {
         "telegram": {
