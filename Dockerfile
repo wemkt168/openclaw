@@ -55,5 +55,6 @@ USER node
 EXPOSE 8080
 
 # Startup command via custom entrypoint (runs Gateway + Node Host)
-RUN chmod +x docker-entrypoint.sh
-CMD ["./docker-entrypoint.sh"]
+# Double insurance: set chmod during copy and use explicit sh to run
+COPY --chmod=755 docker-entrypoint.sh ./docker-entrypoint.sh
+CMD ["sh", "./docker-entrypoint.sh"]
