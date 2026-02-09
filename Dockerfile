@@ -56,8 +56,10 @@ EXPOSE 8080
 
 # Startup command via custom entrypoint (runs Gateway + Node Host)
 # 1. Copy script
-COPY --chmod=755 docker-entrypoint.sh ./docker-entrypoint.sh
-# 2. Force Unix line endings (fixes windows-to-linux deployment issues)
-RUN sed -i 's/\r$//' ./docker-entrypoint.sh
-# 3. Explicitly run with sh for maximum compatibility
+COPY docker-entrypoint.sh ./docker-entrypoint.sh
+# 2. Force Unix line endings (safe tr method) & Set permissions
+RUN cat ./docker-entrypoint.sh | tr -d '\r' > ./docker-entrypoint.sh.tmp && \
+  mv ./docker-entrypoint.sh.tmp ./docker-entrypoint.sh && \
+  chmod 755 ./docker-entrypoint.sh
+# 3. Explicitly run with sh
 CMD ["sh", "./docker-entrypoint.sh"]
