@@ -44,8 +44,8 @@
                 "default": true,
                 "identity": {
                     "name": "OpenClaw",
-                    "theme": "自主进化的 AI 开发者",
-                    "emoji": "🦞"
+                    "theme": "进化体",
+                    "emoji": "🧬"
                 }
             }
         ]
@@ -62,7 +62,8 @@
             "allowInsecureAuth": true
         },
         "auth": {
-            "mode": "token"
+            "mode": "token",
+            "token": "${OPENCLAW_GATEWAY_TOKEN}"
         }
     },
     "channels": {
@@ -92,7 +93,8 @@
         },
         "web": {
             "search": {
-                "enabled": true
+                "enabled": true,
+                "apiKey": "${BRAVE_SEARCH_API_KEY}"
             },
             "fetch": {
                 "enabled": true

@@ -23,6 +23,14 @@ echo "  OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN:+[SET]}"
 echo "  TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:+[SET]}"
 echo ""
 
-# Start gateway
+# Start Gateway in background
 echo "Starting OpenClaw Gateway..."
-exec node dist/index.js gateway --allow-unconfigured --bind lan --port 18789
+node dist/index.js gateway --allow-unconfigured --bind lan --port 8080 &
+GATEWAY_PID=$!
+
+# Wait for Gateway to initialize (simple sleep, could be robustified with netcat/curl loop)
+sleep 2
+
+# Start Node Host in foreground, connecting to local Gateway
+echo "Starting OpenClaw Node Host (ID: OpenClaw-Master)..."
+exec node dist/index.js node run --host 127.0.0.1 --port 8080 --node-id OpenClaw-Master
