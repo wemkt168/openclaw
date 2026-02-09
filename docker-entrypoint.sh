@@ -23,6 +23,10 @@ echo "  OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN:+[SET]}"
 echo "  TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:+[SET]}"
 echo ""
 
+# Initialize Zeabur persistent configuration (CRITICAL)
+echo "Initializing Zeabur Config..."
+node scripts/ensure-zeabur-config.js
+
 # Start Gateway in background
 echo "Starting OpenClaw Gateway..."
 node dist/index.js gateway --allow-unconfigured --bind lan --port 8080 &

@@ -54,7 +54,6 @@ USER node
 # Expose port 8080 for Zeabur reverse proxy
 EXPOSE 8080
 
-# Startup command with config auto-repair
-# 1. Run ensure-zeabur-config.js to patch/initialize persistent config
-# 2. Start gateway
-CMD ["sh", "-c", "node scripts/ensure-zeabur-config.js && node dist/index.js gateway --allow-unconfigured --bind lan --port 8080"]
+# Startup command via custom entrypoint (runs Gateway + Node Host)
+RUN chmod +x docker-entrypoint.sh
+CMD ["./docker-entrypoint.sh"]
