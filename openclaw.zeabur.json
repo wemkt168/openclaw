@@ -85,9 +85,17 @@
         "profile": "full",
         "elevated": {
             "enabled": true,
-            "allowFrom": [
-                "*"
-            ]
+            "allowFrom": {
+                "telegram": [
+                    "*"
+                ],
+                "web": [
+                    "*"
+                ]
+            }
+        },
+        "browser": {
+            "enabled": true
         },
         "web": {
             "search": {
@@ -95,9 +103,6 @@
                 "apiKey": "${BRAVE_SEARCH_API_KEY}"
             },
             "fetch": {
-                "enabled": true
-            },
-            "browser": {
                 "enabled": true
             }
         }
