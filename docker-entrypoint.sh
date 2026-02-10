@@ -27,13 +27,27 @@ echo ""
 echo "Initializing Zeabur Config..."
 node scripts/ensure-zeabur-config.js
 
-# Start Gateway in background
+# Start Gateway in background with detailed logging
 echo "Starting OpenClaw Gateway..."
-node dist/index.js gateway --allow-unconfigured --bind lan --port 8080 &
+# Enable debug mode for visibility
+export DEBUG=*
+node dist/index.js gateway --allow-unconfigured --bind lan --port 8080 > /var/log/gateway.log 2>&1 &
 GATEWAY_PID=$!
 
-# Wait for Gateway to initialize (simple sleep, could be robustified with netcat/curl loop)
-sleep 2
+# Wait for Gateway to be ready (Loop until port 8080 is open)
+echo "Waiting for Gateway to execute on port 8080..."
+timeout=30
+while ! nc -z 127.0.0.1 8080; do
+  sleep 1
+  timeout=$((timeout - 1))
+  if [ "$timeout" -le 0 ]; then
+    echo "ERROR: Gateway failed to start within 30 seconds."
+    echo "=== Gateway Logs ==="
+    cat /var/log/gateway.log
+    exit 1
+  fi
+done
+echo "Gateway is UP!"
 
 # Start Node Host in foreground, connecting to local Gateway
 echo "Starting OpenClaw Node Host (ID: OpenClaw-Master)..."
