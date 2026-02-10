@@ -24,10 +24,18 @@ COPY scripts ./scripts
 RUN pnpm install --frozen-lockfile
 
 COPY . .
+
 RUN OPENCLAW_A2UI_SKIP_MISSING=1 pnpm build
 # Force pnpm for UI build (Bun may fail on ARM/Synology architectures)
 ENV OPENCLAW_PREFER_PNPM=1
 RUN pnpm ui:build
+
+# ============================================
+# Browser Tool Support (Playwright)
+# ============================================
+# Install Chromium and system dependencies for the Browser tool
+# This ensures "web.browser" works out-of-the-box
+RUN npx playwright install --with-deps chromium
 
 # ============================================
 # Runtime configuration

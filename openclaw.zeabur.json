@@ -84,12 +84,7 @@
     "tools": {
         "profile": "full",
         "elevated": {
-            "enabled": true,
-            "allowFrom": {
-                "telegram": [
-                    "tg:7322349199"
-                ]
-            }
+            "enabled": true
         },
         "web": {
             "search": {
