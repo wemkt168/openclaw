@@ -42,6 +42,10 @@ ENV PORT=8080
 ENV HOME=/home/node
 ENV TERM=xterm-256color
 
+# Explicitly define config paths to ensure consistent resolution (fixes Zeabur startup crash)
+ENV OPENCLAW_STATE_DIR=/home/node/.openclaw
+ENV OPENCLAW_CONFIG_PATH=/home/node/.openclaw/openclaw.json
+
 # Reduce memory usage for smaller instances
 ENV NODE_OPTIONS="--max-old-space-size=1536"
 
