@@ -1,54 +1,63 @@
 #!/bin/sh
 # OpenClaw Zeabur startup script
-# Based on official documentation: https://docs.openclaw.ai
+# Refactored based on Perplexity & Ecosystem Best Practices (2025-2026)
 
 set -e
 
-echo "=== OpenClaw Zeabur Startup ==="
+# 1. Enforce Production Mode (Critical for performance)
+export NODE_ENV=production
+
+echo "=== OpenClaw Zeabur Startup (Production Mode) ==="
 echo "State dir: $OPENCLAW_STATE_DIR"
 echo "Config path: $OPENCLAW_CONFIG_PATH"
 
-# Verify config file exists
-if [ -f "$OPENCLAW_CONFIG_PATH" ]; then
-    echo "Config file found"
-else
-    echo "WARNING: Config file not found at $OPENCLAW_CONFIG_PATH"
-fi
+# 2. Trap signals for graceful shutdown of both processes
+trap 'kill $(jobs -p)' SIGINT SIGTERM
 
-# Verify required environment variables
-echo ""
-echo "Environment check:"
-echo "  OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:+[SET]}"
-echo "  OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN:+[SET]}"
-echo "  TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:+[SET]}"
-echo ""
-
-# Initialize Zeabur persistent configuration (CRITICAL)
+# 3. Initialize Zeabur persistent configuration
 echo "Initializing Zeabur Config..."
 node scripts/ensure-zeabur-config.js
 
-# Start Gateway in background (Logs to stdout for Zeabur visibility)
+# 4. Start Gateway in background (Logs to stdout)
+# Note: output is NOT redirected, allowing Zeabur to capture logs
 echo "Starting OpenClaw Gateway..."
-# Enable debug mode ONLY for OpenClaw components if needed
-# export DEBUG=openclaw:*
 node dist/index.js gateway --allow-unconfigured --bind lan --port 8080 &
 GATEWAY_PID=$!
 
-# Wait for Gateway to be ready (Loop until port 8080 is open)
-# Use Node.js for port check to avoid dependency on 'nc' (netcat) which might be missing
-echo "Waiting for Gateway to execute on port 8080..."
+# 5. Robust Health Check (Wait for /health endpoint)
+# We use a Node.js script to check the /health HTTP endpoint, which is more reliable than a simple port check.
+# This ensures the Gateway application logic is actually ready.
+echo "Waiting for Gateway to be healthy at http://127.0.0.1:8080/health..."
 timeout=120
-while ! node -e "require('net').createConnection(8080, '127.0.0.1').on('error', ()=>process.exit(1)).on('connect', ()=>process.exit(0))"; do
-  sleep 1
-  timeout=$((timeout - 1))
+while ! node -e "
+  const http = require('http');
+  const req = http.get('http://127.0.0.1:8080/health', (res) => {
+    if (res.statusCode === 200) { process.exit(0); }
+    else { process.exit(1); }
+  });
+  req.on('error', () => process.exit(1));
+  req.end();
+"; do
+  sleep 2
+  timeout=$((timeout - 2))
   if [ "$timeout" -le 0 ]; then
-    echo "ERROR: Gateway failed to start within 120 seconds."
-    # No need to cat log file as we are now logging to stdout
+    echo "ERROR: Gateway failed to become healthy within 120 seconds."
+    # List processes to see what's happening
+    ps aux
     exit 1
   fi
+  echo "Waiting for Gateway... ($timeout seconds remaining)"
 done
-echo "Gateway is UP!"
+echo "Gateway is HEALTHY and READY!"
 
-# Start Node Host in foreground, connecting to local Gateway
+# 6. Start Node Host in foreground
+# The Node Host connects to the local Gateway we just verified is ready.
 echo "Starting OpenClaw Node Host (ID: OpenClaw-Master)..."
-exec node dist/index.js node run --host 127.0.0.1 --port 8080 --node-id OpenClaw-Master
+node dist/index.js node run --host 127.0.0.1 --port 8080 --node-id OpenClaw-Master &
+NODE_PID=$!
+
+# 7. Wait for any process to exit
+wait -n $GATEWAY_PID $NODE_PID
+EXIT_CODE=$?
+echo "One of the processes exited with check code $EXIT_CODE"
+exit $EXIT_CODE
