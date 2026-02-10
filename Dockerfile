@@ -33,9 +33,13 @@ RUN pnpm ui:build
 # ============================================
 # Browser Tool Support (Playwright)
 # ============================================
-# Install Chromium and system dependencies for the Browser tool
-# This ensures "web.browser" works out-of-the-box
-RUN npx playwright install --with-deps chromium
+# 1. Install system dependencies ONLY (Lightweight, requires root)
+#    This keeps the image small. The browser binary will be downloaded manually.
+RUN npx playwright install-deps chromium
+
+# 2. Persist browser binaries to the state volume
+#    This ensures manual installation survives restarts.
+ENV PLAYWRIGHT_BROWSERS_PATH=/home/node/.openclaw/playwright
 
 # ============================================
 # Runtime configuration
