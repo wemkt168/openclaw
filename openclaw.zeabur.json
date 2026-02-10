@@ -84,7 +84,10 @@
     "tools": {
         "profile": "full",
         "elevated": {
-            "enabled": true
+            "enabled": true,
+            "allowFrom": [
+                "*"
+            ]
         },
         "web": {
             "search": {
