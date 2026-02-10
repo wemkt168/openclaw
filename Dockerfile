@@ -35,8 +35,12 @@ RUN pnpm ui:build
 # ============================================
 # 1. Install system dependencies ONLY (Lightweight, requires root)
 #    This keeps the image small. The browser binary will be downloaded manually.
-#    Using npx -y playwright@1.58.1 to match package.json core version
-RUN npx -y playwright@1.58.1 install-deps chromium
+# 1. Install system dependencies ONLY (Lightweight, requires root)
+#    This keeps the image small. The browser binary will be downloaded manually.
+#    Use global install to ensure CLI binary is found in PATH
+RUN npm install -g playwright@1.58.1 && \
+  playwright install-deps chromium && \
+  npm uninstall -g playwright
 
 # 2. Persist browser binaries to the state volume
 #    This ensures manual installation survives restarts.
