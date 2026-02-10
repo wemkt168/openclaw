@@ -84,10 +84,15 @@
     "tools": {
         "profile": "full",
         "elevated": {
-            "enabled": true
-        },
-        "browser": {
-            "enabled": true
+            "enabled": true,
+            "allowFrom": {
+                "telegram": [
+                    "*"
+                ],
+                "web": [
+                    "*"
+                ]
+            }
         },
         "web": {
             "search": {
