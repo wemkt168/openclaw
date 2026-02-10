@@ -29,8 +29,8 @@ node scripts/ensure-zeabur-config.js
 
 # Start Gateway in background with detailed logging
 echo "Starting OpenClaw Gateway..."
-# Enable debug mode for visibility
-export DEBUG=*
+# Enable debug mode ONLY for OpenClaw components (avoid flooding with babel/deps logs)
+# export DEBUG=openclaw:*
 node dist/index.js gateway --allow-unconfigured --bind lan --port 8080 > /var/log/gateway.log 2>&1 &
 GATEWAY_PID=$!
 
