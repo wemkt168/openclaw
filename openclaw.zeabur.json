@@ -1,4 +1,5 @@
 {
+    "_config_version": "final_fix_no_browser",
     "env": {
         "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY}",
         "TELEGRAM_BOT_TOKEN": "${TELEGRAM_BOT_TOKEN}"
