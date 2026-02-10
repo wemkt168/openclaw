@@ -8,13 +8,19 @@
         "defaults": {
             "models": {
                 "openrouter/anthropic/claude-sonnet-4": {
-                    "alias": "sonnet"
+                    "alias": "sonnet",
+                    "contextWindow": 200000,
+                    "maxTokens": 8192
                 },
                 "openrouter/google/gemini-2.0-flash-001": {
-                    "alias": "flash"
+                    "alias": "flash",
+                    "contextWindow": 1000000,
+                    "maxTokens": 8192
                 },
                 "openrouter/anthropic/claude-3-opus": {
-                    "alias": "opus"
+                    "alias": "opus",
+                    "contextWindow": 200000,
+                    "maxTokens": 4096
                 },
                 "openrouter/openai/gpt-4o": {
                     "alias": "gpt4o"
