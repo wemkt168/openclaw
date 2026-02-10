@@ -35,9 +35,10 @@ node dist/index.js gateway --allow-unconfigured --bind lan --port 8080 > /var/lo
 GATEWAY_PID=$!
 
 # Wait for Gateway to be ready (Loop until port 8080 is open)
+# Use Node.js for port check to avoid dependency on 'nc' (netcat) which might be missing
 echo "Waiting for Gateway to execute on port 8080..."
 timeout=30
-while ! nc -z 127.0.0.1 8080; do
+while ! node -e "require('net').createConnection(8080, '127.0.0.1').on('error', ()=>process.exit(1)).on('connect', ()=>process.exit(0))"; do
   sleep 1
   timeout=$((timeout - 1))
   if [ "$timeout" -le 0 ]; then
