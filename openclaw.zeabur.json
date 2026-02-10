@@ -86,6 +86,9 @@
         "elevated": {
             "enabled": true
         },
+        "browser": {
+            "enabled": true
+        },
         "web": {
             "search": {
                 "enabled": true,
