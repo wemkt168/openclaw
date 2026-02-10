@@ -1,5 +1,4 @@
 {
-    "_config_version": "final_fix_no_browser",
     "env": {
         "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY}",
         "TELEGRAM_BOT_TOKEN": "${TELEGRAM_BOT_TOKEN}"
@@ -8,19 +7,13 @@
         "defaults": {
             "models": {
                 "openrouter/anthropic/claude-sonnet-4": {
-                    "alias": "sonnet",
-                    "contextWindow": 200000,
-                    "maxTokens": 8192
+                    "alias": "sonnet"
                 },
                 "openrouter/google/gemini-2.0-flash-001": {
-                    "alias": "flash",
-                    "contextWindow": 1000000,
-                    "maxTokens": 8192
+                    "alias": "flash"
                 },
                 "openrouter/anthropic/claude-3-opus": {
-                    "alias": "opus",
-                    "contextWindow": 200000,
-                    "maxTokens": 4096
+                    "alias": "opus"
                 },
                 "openrouter/openai/gpt-4o": {
                     "alias": "gpt4o"
