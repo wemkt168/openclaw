@@ -32,6 +32,12 @@ echo "Config path: $OPENCLAW_CONFIG_PATH"
 echo "Initializing Zeabur Config..."
 node scripts/ensure-zeabur-config.js
 
+# 2.1 Disable Telegram Integration (User Request)
+# The user wants to configure Telegram manually later. 
+# We unset this env var so OpenClaw doesn't try to auto-connect and crash on 401.
+echo "Disabling Telegram integration (unset TELEGRAM_BOT_TOKEN)..."
+unset TELEGRAM_BOT_TOKEN
+
 # 3. Start Gateway in background (Logs to stdout)
 echo "Starting OpenClaw Gateway..."
 node dist/index.js gateway --allow-unconfigured --bind lan --port 8080 &
