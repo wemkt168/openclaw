@@ -68,17 +68,7 @@
     },
     "channels": {
         "telegram": {
-            "enabled": true,
-            "botToken": "${TELEGRAM_BOT_TOKEN}",
-            "dmPolicy": "allowlist",
-            "allowFrom": [
-                "tg:7322349199"
-            ],
-            "groups": {
-                "*": {
-                    "requireMention": true
-                }
-            }
+            "enabled": false
         }
     },
     "tools": {
