@@ -84,17 +84,6 @@
     "tools": {
         "profile": "full",
         "elevated": {
-            "enabled": true,
-            "allowFrom": {
-                "telegram": [
-                    "*"
-                ],
-                "web": [
-                    "*"
-                ]
-            }
-        },
-        "browser": {
             "enabled": true
         },
         "web": {
