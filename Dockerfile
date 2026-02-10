@@ -48,18 +48,15 @@ ENV NODE_OPTIONS="--max-old-space-size=1536"
 # Copy config to a safe location for volume initialization
 COPY openclaw.zeabur.json /app/openclaw.defaults.json
 
-# Security: Run as non-root user (per official Dockerfile pattern)
-USER node
-
 # Expose port 8080 for Zeabur reverse proxy
 EXPOSE 8080
 
 # Startup command via custom entrypoint (runs Gateway + Node Host)
-# 1. Copy script
-COPY docker-entrypoint.sh ./docker-entrypoint.sh
-# 2. Force Unix line endings (safe tr method) & Set permissions
-RUN cat ./docker-entrypoint.sh | tr -d '\r' > ./docker-entrypoint.sh.tmp && \
-  mv ./docker-entrypoint.sh.tmp ./docker-entrypoint.sh && \
-  chmod 755 ./docker-entrypoint.sh
-# 3. Explicitly run with sh
+# 1. Copy script (as root, so permissions work)
+COPY --chmod=755 docker-entrypoint.sh ./docker-entrypoint.sh
+
+# Security: Run as non-root user (switch AFTER setup is done)
+USER node
+
+# 2. Explicitly run with sh
 CMD ["sh", "./docker-entrypoint.sh"]
