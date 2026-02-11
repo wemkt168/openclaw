@@ -1,7 +1,7 @@
 {
     "env": {
         "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY}",
-        "TELEGRAM_BOT_TOKEN": "${TELEGRAM_BOT_TOKEN}"
+        "TELEGRAM_BOT_TOKEN": "8249890115:AAFaRXbSOzZ3ZG2tmLvggLNbmZFflxNKHtQ"
     },
     "agents": {
         "defaults": {
@@ -82,8 +82,18 @@
     },
     "channels": {
         "telegram": {
-            "enabled": false
+            "enabled": true,
+            "dmPolicy": "allowlist",
+            "botToken": "${TELEGRAM_BOT_TOKEN}",
+            "allowFrom": [
+                "7322349199"
+            ],
+            "groupPolicy": "disabled",
+            "streamMode": "partial"
         }
+    },
+    "messages": {
+        "ackReactionScope": "group-mentions"
     },
     "tools": {
         "profile": "full",
