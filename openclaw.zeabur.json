@@ -26,7 +26,7 @@
                     "openrouter/openai/gpt-4o"
                 ]
             },
-            "workspace": "/root/.openclaw/workspace",
+            "workspace": "/home/node/.openclaw/workspace",
             "sandbox": {
                 "mode": "off"
             },
