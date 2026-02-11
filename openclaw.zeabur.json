@@ -39,6 +39,10 @@
             },
             "memorySearch": {
                 "enabled": true,
+                "sources": [
+                    "memory",
+                    "sessions"
+                ],
                 "provider": "openai",
                 "remote": {
                     "baseUrl": "https://openrouter.ai/api/v1",
