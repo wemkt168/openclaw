@@ -10,18 +10,24 @@
 
 ## 🇨🇳 第一部分：中文版 (Chinese Version)
 
-### 1. 🔑 环境变量全集 (Environment Variables)
+### 1. 🔑 环境变量与密钥管理 (Secrets & Env Vars)
 
-**⚠️ 严重警告**: 以下变量必须在 **Zeabur 后台 -> Settings -> Variables** 中配置。**严禁**将这些密钥硬编码在代码库的文件中！
+我们有两个层面的环境变量：
+1.  **Zeabur 生产环境**: 在 Zeabur Dashboard 设置。
+2.  **本地/备份环境**: 在项目根目录的 `.env.zeabur` 文件中。
 
-| 变量名 (Key) | 用途说明 | 重要性 | 示例格式 / 备注 |
+#### 📄 本地密钥文件: `.env.zeabur` (重要！)
+
+**致 Agent**: 如果你想找真实的 API Key (比如 `sk-or-...`)，**请直接查看根目录下的 `.env.zeabur` 文件**。不要在硬盘里乱搜了！
+
+| 变量名 (Key) | 用途说明 | 重要性 | 备注 |
 | :--- | :--- | :--- | :--- |
-| `OPENROUTER_API_KEY` | **模型密钥**。OpenClaw 用它来调用 Gemini/Claude 进行思考。 | 🔴 **极高** | `sk-or-v1-cr-...` (必须支持 OpenRouter) |
-| `OPENCLAW_GATEWAY_TOKEN` | **认证令牌**。保护 Dashboard 和 WebSocket 连接的安全密码。 | 🔴 **极高** | `MySecretString123` (体现在 URL 参数 `?token=...` 中) |
-| `TELEGRAM_BOT_TOKEN` | **Telegram 机器人密钥**。(当前**已禁用**，防止无效 Token 导致无限重启)。 | 🟡 中等 | `123456:ABC-DEF...` (仅在 `openclaw.zeabur.json` 开启 TG 时需要) |
-| `BRAVE_SEARCH_API_KEY` | **联网搜索密钥**。允许 Agent 搜索实时互联网信息。 | 🟡 中等 | `BS...` (用于 `tools.web.search`) |
-| `PORT` | **服务端口**。Zeabur 路由流量的端口。 | 🟢 系统级 | `8080` (在 Dockerfile 中已固定) |
-| `NODE_ENV` | **运行环境**。 | 🟢 系统级 | `production` |
+| `OPENROUTER_API_KEY` | **模型密钥** | 🔴 **极高** | 真实值见 `.env.zeabur` |
+| `OPENCLAW_GATEWAY_TOKEN` | **认证令牌** | 🔴 **极高** | 真实值见 `.env.zeabur` |
+| `TELEGRAM_BOT_TOKEN` | **Telegram 机器人密钥** | 🟡 中等 | (已禁用，需在 UI 开启) |
+| `BRAVE_SEARCH_API_KEY` | **联网搜索密钥** | 🟡 中等 | 真实值见 `.env.zeabur` |
+| `POSTGRES_...` | **数据库连接** | 🟢 系统级 | 真实值见 `.env.zeabur` |
+| `S3_...` | **对象存储 (MinIO)** | 🟢 系统级 | 真实值见 `.env.zeabur` |
 
 ### 2. 🏗️ 架构与文件系统 (特殊机制)
 
@@ -41,13 +47,11 @@
 
 **如果遇到 502 Bad Gateway 或 Crash Loop (无限重启):**
 
-1.  **不要盲目改代码**。先检查 **Zeabur 变量** 是否漏填了 `OPENROUTER_API_KEY`。
-2.  **检查配置文件 (`openclaw.zeabur.json`)**:
-    *   是否有 `tools.browser`? -> **删掉它** (它会导致 Schema 校验失败)。
-    *   是否有 `_config_version`? -> **删掉它**。
-    *   `telegram.enabled` 是 `true`? -> **检查 Token** 或 **改为 `false`**。
-3.  **使用"黄金备份"恢复**:
-    *   路径: `backup_2026-02-10_Golden_State/GOLDEN_CONFIG.md`
+1.  **第一步**: 打开 `.env.zeabur`，确认里面的 Key 是否正确。
+2.  **第二步**: 检查 **Zeabur 变量** 是否漏填了这些 Key。
+3.  **第三步**: 检查配置文件 (`openclaw.zeabur.json`) 是否有非法字段 (如 `tools.browser`, `_config_version`)。
+4.  **第四步 (大招)**: 使用"黄金备份"恢复:
+    *   路径: `docs/20260210_GOLDEN_CONFIG.md`
     *   操作: 将该文件中的代码完整覆盖回根目录，提交推送。
 
 ---
@@ -55,18 +59,24 @@
 
 ## 🇺🇸 Part 2: English Version
 
-### 1. 🔑 Environment Variables Registry
+### 1. 🔑 Environment Variables & Secrets
 
-**CRITICAL WARNING**: These variables MUST be set in the **Zeabur Dashboard -> Settings -> Variables** section. **NEVER** hardcode these keys in the repository files!
+We manage secrets in two places:
+1.  **Production (Zeabur)**: Configured in the Dashboard.
+2.  **Local/Backup**: Stored in `.env.zeabur`.
 
-| Variable Name (Key) | Description | Criticality | Example Format / Notes |
+#### 📄 Local Secrets File: `.env.zeabur` (IMPORTANT!)
+
+**To Agent**: If you are looking for the ACTUAL API Keys (e.g., `sk-or-...`), **LOOK AT `.env.zeabur` in the root directory**. Do not scan the entire hard drive!
+
+| Variable Name (Key) | Description | Criticality | Notes |
 | :--- | :--- | :--- | :--- |
-| `OPENROUTER_API_KEY` | **LLM API Key**. Used by OpenClaw to talk to Gemini/Claude. | 🔴 **High** | `sk-or-v1-cr-...` (Must support OpenRouter) |
-| `OPENCLAW_GATEWAY_TOKEN` | **Auth Token**. Password protecting the Dashboard & Websocket. | 🔴 **High** | `MySecretString123` (Visible in URL `?token=...`) |
-| `TELEGRAM_BOT_TOKEN` | **Telegram Bot Token**. (Currently **DISABLED** to prevent crash loops from invalid tokens). | 🟡 Medium | `123456:ABC-DEF...` (Only needed if `openclaw.zeabur.json` enables Telegram) |
-| `BRAVE_SEARCH_API_KEY` | **Web Search Key**. Allows the agent to search the internet. | 🟡 Medium | `BS...` (Required for `tools.web.search`) |
-| `PORT` | **Service Port**. Zeabur expects this port for routing. | 🟢 System | `8080` (Fixed in Dockerfile) |
-| `NODE_ENV` | **Runtime Environment**. | 🟢 System | `production` |
+| `OPENROUTER_API_KEY` | **LLM API Key** | 🔴 **High** | See `.env.zeabur` for value |
+| `OPENCLAW_GATEWAY_TOKEN` | **Auth Token** | 🔴 **High** | See `.env.zeabur` for value |
+| `TELEGRAM_BOT_TOKEN` | **Telegram Bot Token** | 🟡 Medium | (Disabled, verify in UI) |
+| `BRAVE_SEARCH_API_KEY` | **Web Search Key** | 🟡 Medium | See `.env.zeabur` for value |
+| `POSTGRES_...` | **Database Config** | 🟢 System | See `.env.zeabur` for value |
+| `S3_...` | **Object Storage** | 🟢 System | See `.env.zeabur` for value |
 
 ### 2. 🏗️ Architecture & Filesystem (Special Mechanism)
 
@@ -86,11 +96,9 @@
 
 **If you encounter 502 Bad Gateway or Crash Loops:**
 
-1.  **DON'T panic-code**. Check **Zeabur Variables** first. Is `OPENROUTER_API_KEY` missing?
-2.  **Check `openclaw.zeabur.json`**:
-    *   Exists `tools.browser`? -> **DELETE IT** (Validation Error).
-    *   Exists `_config_version`? -> **DELETE IT**.
-    *   Is `telegram.enabled` true? -> **CHECK TOKEN** or **set to `false`**.
-3.  **Restore from Golden Backup**:
-    *   Path: `backup_2026-02-10_Golden_State/GOLDEN_CONFIG.md`
+1.  **Step 1**: Open `.env.zeabur` and verify the keys are correct.
+2.  **Step 2**: Check **Zeabur Variables** to ensure they match `.env.zeabur`.
+3.  **Step 3**: Check `openclaw.zeabur.json` for invalid fields (`tools.browser`, `_config_version`).
+4.  **Step 4 (Nuclear Option)**: Restore from Golden Backup:
+    *   Path: `docs/20260210_GOLDEN_CONFIG.md`
     *   Action: Copy the file contents back to the root directory and push.
