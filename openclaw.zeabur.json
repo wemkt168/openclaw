@@ -80,15 +80,6 @@
             "token": "${OPENCLAW_GATEWAY_TOKEN}"
         }
     },
-    "exec": {
-        "host": "gateway",
-        "security": "full",
-        "ask": "off",
-        "backgroundMs": 10000,
-        "timeoutSec": 3600,
-        "cleanupMs": 3600000,
-        "notifyOnExit": true
-    },
     "channels": {
         "telegram": {
             "enabled": false
@@ -115,6 +106,15 @@
             "fetch": {
                 "enabled": true
             }
+        },
+        "exec": {
+            "host": "gateway",
+            "security": "full",
+            "ask": "off",
+            "backgroundMs": 10000,
+            "timeoutSec": 3600,
+            "cleanupMs": 3600000,
+            "notifyOnExit": true
         }
     },
     "commands": {
