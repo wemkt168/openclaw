@@ -115,7 +115,10 @@
         "web": {
             "search": {
                 "enabled": true,
-                "apiKey": "${BRAVE_SEARCH_API_KEY}"
+                "provider": "perplexity",
+                "perplexity": {
+                    "model": "perplexity/sonar-reasoning"
+                }
             },
             "fetch": {
                 "enabled": true
