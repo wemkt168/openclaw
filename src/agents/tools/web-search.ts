@@ -471,6 +471,7 @@ export function createWebSearchTool(options?: {
   const perplexityConfig = resolvePerplexityConfig(search);
 
   const description =
+    provider === "perplexity"
       ? "Search the web using Perplexity Sonar (direct or via OpenRouter). Returns AI-synthesized answers with citations from real-time web search."
       : "Search the web using Brave Search API. Supports region-specific and localized search via country and language parameters. Returns titles, URLs, and snippets. IMPORTANT: If using 'country' or 'search_lang', you MUST translate your 'query' to that target language first (e.g. use Vietnamese query for country='VN'), otherwise the API will reject the request.";
 
