@@ -9,7 +9,7 @@ TEST_RESULT=$?
 if [ $TEST_RESULT -eq 0 ]; then
     echo "🟢 測試通過！Teddy 功能正常上線。"
     # 啟動 OpenClaw 主程式 (在專案根目錄執行)
-    pnpm start
+    pnpm start gateway --allow-unconfigured --bind lan --port ${PORT:-8080}
 else
     echo "🔴 測試失敗！檢測到致命錯誤！"
     echo "🔄 正在啟動自動退版機制 (Rollback)..."
