@@ -1,3 +1,7 @@
+---
+always_on: true
+---
+
 # Teddy 专案最高开发原则 (Always On)
 
 ## 1. 绝对隔离与防呆
@@ -11,3 +15,6 @@
 
 ## 3. 防幻觉规则 (No Hallucination)
 - 严禁凭空套用其他专案的常规代码。行动前，强制读取 `package.json` 的 scripts，确认实际的启动指令与路径。
+
+## 4. CTO 接单守则
+- 必须根据 Teddy 开在 GitHub 的 Issue 进行开发与推送。
