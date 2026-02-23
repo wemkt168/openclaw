@@ -60,6 +60,21 @@ try {
         modified = true;
     }
 
+    // Dynamic Gateway Token Injection
+    config.gateway.auth = config.gateway.auth || {};
+    if (config.gateway.auth.token === '${OPENCLAW_GATEWAY_TOKEN}') {
+        const envToken = process.env.OPENCLAW_GATEWAY_TOKEN;
+        if (envToken) {
+            console.log('[Zeabur] Injecting OPENCLAW_GATEWAY_TOKEN from environment.');
+            config.gateway.auth.token = envToken;
+            modified = true;
+        } else {
+            console.error('[Zeabur] 🚨 WARNING: OPENCLAW_GATEWAY_TOKEN environment variable is missing!');
+            console.error('[Zeabur] 🚨 The gateway will fail to authenticate incoming connections (1008 pairing required).');
+        }
+    }
+
+
     // Enforce Trusted Proxies
     config.gateway.trustedProxies = config.gateway.trustedProxies || [];
     const requiredProxies = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"];
