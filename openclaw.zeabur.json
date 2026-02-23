@@ -57,7 +57,7 @@
         },
         "list": [
             {
-                "id": "master",
+                "id": "main",
                 "default": true,
                 "identity": {
                     "name": "OpenClaw",
