@@ -68,21 +68,21 @@
         ]
     },
     "gateway": {
-        "bind": "lan",
         "port": 8080,
-        "trustedProxies": [
-            "10.0.0.0/8",
-            "172.16.0.0/12",
-            "192.168.0.0/16",
-            "10.42.0.0/16"
-        ],
+        "bind": "lan",
         "controlUi": {
             "allowInsecureAuth": true
         },
         "auth": {
             "mode": "token",
-            "token": "${OPENCLAW_GATEWAY_TOKEN}"
-        }
+            "token": "5a478335032d84784407841753900222"
+        },
+        "trustedProxies": [
+            "10.0.0.0/8",
+            "172.16.0.0/12",
+            "192.168.0.0/16",
+            "10.42.0.0/16"
+        ]
     },
     "channels": {
         "telegram": {
