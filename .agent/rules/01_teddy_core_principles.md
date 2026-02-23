@@ -5,8 +5,8 @@ always_on: true
 # Teddy 专案最高开发原则 (Always On)
 
 ## 🛑 絕對不可觸碰的系統紅線 (Tier 0 Rules)
-1. **Zeabur 雲端存活協議**：我們是部署在 Zeabur 的雲端架構。`openclaw.json5` 中的 `"gateway"` 區塊（包含 `auth.token` 與 `trustedProxies`）是系統對外連線的唯一生命線。
-2. **禁止過度優化**：未來無論你在進行多麼極簡的 Config 重構，**絕對嚴禁刪除或修改 `"gateway"` 區塊的任何參數**。一旦刪除，系統將陷入 `1008 pairing required` 鎖死狀態。
+1. **密碼變數化原則 (資安第一)**：任何 Token、API Key 與密碼，【絕對禁止】硬編碼 (Hardcode) 於 GitHub 追蹤的檔案中。必須使用 `${VARIABLE_NAME}` 的格式，讓系統從伺服器的環境變數中自動注入。
+2. **網路代理與綁定不可刪**：我們部署在 Zeabur，維持 `gateway.bind: "lan"` 與 `gateway.trustedProxies` 陣列是系統生存底線。嚴禁在優化代碼時將其刪除，否則系統會將內部路由視為攻擊並鎖死。
 
 
 ## 1. 绝对隔离与防呆

@@ -75,7 +75,7 @@
         },
         "auth": {
             "mode": "token",
-            "token": "5a478335032d84784407841753900222"
+            "token": "${OPENCLAW_GATEWAY_TOKEN}"
         },
         "trustedProxies": [
             "10.0.0.0/8",
