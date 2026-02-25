@@ -31,14 +31,15 @@ echo "Config path: $OPENCLAW_CONFIG_PATH"
 # 2. Initialize Zeabur persistent configuration
 echo "Initializing Zeabur Config..."
 
-# CRITICAL FIX: Force reset config to ensure Git updates apply
-# This resolves the issue where old/invalid configs in the persistent volume cause crash loops.
-if [ -f "$OPENCLAW_CONFIG_PATH" ]; then
-    echo "Forcing configuration reset: Removing stale $OPENCLAW_CONFIG_PATH..."
-    rm "$OPENCLAW_CONFIG_PATH"
+# CRITICAL FIX: Only run ensure-zeabur-config.js if config format exists
+if [ ! -f "$OPENCLAW_CONFIG_PATH" ]; then
+    echo "Creating initial configuration..."
+    node scripts/ensure-zeabur-config.js
+else
+    echo "Using existing configuration at $OPENCLAW_CONFIG_PATH"
+    # Still run the safety checks for required proxies without overwriting models
+    node scripts/ensure-zeabur-config.js
 fi
-
-node scripts/ensure-zeabur-config.js
 
 # 2.1 Disable Telegram Integration (User Request)
 # The user wants to configure Telegram manually later. 
