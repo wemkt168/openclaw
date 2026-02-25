@@ -76,6 +76,11 @@ try {
     // ⚔️ 階段 2：絕對強制覆寫 (我的防禦邏輯，確保 Zeabur 環境存活)
     // =====================================================================
 
+    // 🛡️ 終極安全氣囊 (確保所有子物件絕對存在，防範階段 1 合併失效)
+    config.gateway.controlUi = config.gateway.controlUi || {};
+    config.gateway.auth = config.gateway.auth || {};
+    config.gateway.trustedProxies = config.gateway.trustedProxies || [];
+
     // 1. 強制設定 Insecure Auth (Zeabur 反向代理內部必須)
     if (config.gateway.controlUi.allowInsecureAuth !== true) {
         config.gateway.controlUi.allowInsecureAuth = true;
@@ -132,6 +137,7 @@ try {
     }
 
 } catch (err) {
-    console.error('[Zeabur] Error patching configuration:', err);
+    console.error('[Zeabur] 🚨 Fatal error patching configuration:', err);
+    console.error('[Zeabur] Stack trace:', err.stack);
     // Do not exit with error, let OpenClaw try to start anyway (it might fail validation but better than crash loop here)
 }
