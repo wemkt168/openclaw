@@ -1,8 +1,4 @@
 {
-    "build": {
-        "type": "docker",
-        "dockerfile": "Dockerfile"
-    },
     "expose": {
         "port": 8080,
         "protocol": "http"
