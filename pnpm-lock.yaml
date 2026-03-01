@@ -144,6 +144,9 @@ importers:
       pdfjs-dist:
         specifier: ^5.4.624
         version: 5.4.624
+      playwright-chromium:
+        specifier: 1.58.1
+        version: 1.58.1
       playwright-core:
         specifier: 1.58.1
         version: 1.58.1
@@ -4626,6 +4629,11 @@ packages:
 
   pixelmatch@7.1.0:
     resolution: {integrity: sha512-1wrVzJ2STrpmONHKBy228LM1b84msXDUoAzVEl0R8Mz4Ce6EPr+IVtxm8+yvrqLYMHswREkjYFaMxnyGnaY3Ng==}
+    hasBin: true
+
+  playwright-chromium@1.58.1:
+    resolution: {integrity: sha512-IZEji6VuJWIW+oCLp+sUSH7FCDNVGQxJSBMgHXKA/S0S5Ykdek9TO//mVsiWx9GwiOrApOb1WSxUJgK6zo/cUw==}
+    engines: {node: '>=18'}
     hasBin: true
 
   playwright-core@1.58.1:
@@ -10213,6 +10221,10 @@ snapshots:
   pixelmatch@7.1.0:
     dependencies:
       pngjs: 7.0.0
+
+  playwright-chromium@1.58.1:
+    dependencies:
+      playwright-core: 1.58.1
 
   playwright-core@1.58.1: {}
 

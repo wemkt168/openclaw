@@ -206,6 +206,7 @@
       "authenticate-pam",
       "esbuild",
       "node-llama-cpp",
+      "playwright-chromium",
       "protobufjs",
       "sharp"
     ]
