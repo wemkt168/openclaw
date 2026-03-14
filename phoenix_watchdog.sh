@@ -1,114 +1,98 @@
 #!/bin/bash
 # ============================================================
 # Phoenix Watchdog —— GitHub ↔ Zeabur Volume 桥接看门狗
-# 解决 GitHub 代码与 Zeabur 持久化 Volume 数据割裂问题
+# 架构师 Hard Spec v2 + Anti SRE 防弹优化
 # ============================================================
 
-set -euo pipefail
+# 开启严格模式 (Anti's SRE Standard)
+# 注意：不开 -e，看门狗需要自行控制错误处理，避免被误杀
+set -uo pipefail
 
-REPO_DIR="$PWD"  # GitHub 代码在 Zeabur 中的路径 (通常是 /app)
+REPO_DIR="$PWD"
 OC_DIR="/home/node/.openclaw"
 WORK_DIR="$OC_DIR/workspace"
 PORT="${PORT:-3000}"
-HEARTBEAT_URL="http://127.0.0.1:$PORT/health"
-NODE_PID=""
+PID_FILE="$WORK_DIR/openclaw.pid"
 
 # -----------------------------------------------------------
-# 1. 初始化桥接：首次开机时将 GitHub 里的初始技能拷入 Volume
-# -----------------------------------------------------------
-bootstrap_skills() {
-  if [ ! -d "$WORK_DIR/skills/web_search" ]; then
-    mkdir -p "$WORK_DIR/skills"
-    cp -r "$REPO_DIR/init_skills/"* "$WORK_DIR/skills/" 2>/dev/null || true
-    echo "✅ Initial skills bootstrapped to volume."
-  else
-    echo "ℹ️  Skills already present in volume, skipping bootstrap."
-  fi
-}
-
-# -----------------------------------------------------------
-# 2. 启动 OpenClaw Gateway (headless 模式)
-# -----------------------------------------------------------
-start_node() {
-  fuser -k "$PORT/tcp" 2>/dev/null || true
-  # 必须使用 headless 参数启动，否则在 Zeabur 无 TTY 环境必崩
-  npx openclaw gateway start --port "$PORT" --bind auto --allow-unconfigured &
-  NODE_PID=$!
-  echo "🚀 OpenClaw Gateway started (PID: $NODE_PID) on port $PORT"
-}
-
-# -----------------------------------------------------------
-# 3. 健康检查：最多等 60 秒
-# -----------------------------------------------------------
-wait_healthy() {
-  for i in $(seq 1 12); do
-    sleep 5
-    if curl -s "$HEARTBEAT_URL" > /dev/null 2>&1; then
-      echo "💚 Gateway is healthy!"
-      return 0
-    fi
-    echo "⏳ Health check attempt $i/12..."
-  done
-  return 1
-}
-
-# -----------------------------------------------------------
-# 信号处理：优雅关闭
+# 优雅关闭 (Graceful Shutdown Trap)
 # -----------------------------------------------------------
 cleanup() {
-  echo "🛑 Received shutdown signal, cleaning up..."
-  if [ -n "$NODE_PID" ]; then
-    kill -TERM "$NODE_PID" 2>/dev/null || true
-  fi
-  exit 0
+    echo "[Watchdog] 收到系统终止信号，执行优雅清理..."
+    if [ -f "$PID_FILE" ]; then
+        kill "$(cat "$PID_FILE")" 2>/dev/null || true
+        rm -f "$PID_FILE"
+    fi
+    exit 0
 }
-trap cleanup INT TERM
+
+# -----------------------------------------------------------
+# 启动 OpenClaw Gateway (Headless)
+# -----------------------------------------------------------
+start_node() {
+    # 释放端口，忽略错误
+    fuser -k "$PORT/tcp" 2>/dev/null || true
+
+    # 强制 Headless 启动
+    npx openclaw gateway start --port "$PORT" --bind auto --allow-unconfigured &
+
+    # 将 PID 写入实体文件，解决跨进程失忆问题
+    echo $! > "$PID_FILE"
+    echo "[Watchdog] Node 已启动，PID: $(cat "$PID_FILE")"
+}
+
+# -----------------------------------------------------------
+# 终结旧 Node 进程
+# -----------------------------------------------------------
+kill_node() {
+    if [ -f "$PID_FILE" ]; then
+        echo "[Watchdog] 正在终结旧的 Node 进程..."
+        kill "$(cat "$PID_FILE")" 2>/dev/null || true
+        rm -f "$PID_FILE"
+        sleep 2
+    fi
+}
 
 # ============================================================
 # 主入口
 # ============================================================
-case "${1:-}" in
-  start)
-    echo "=== 🐦‍🔥 Phoenix Watchdog: START MODE ==="
-    bootstrap_skills
+if [ "${1:-}" == "start" ]; then
+    # 挂载信号拦截器
+    trap cleanup SIGINT SIGTERM
+
+    # 首次开机：空盘桥接，把 GitHub 里的初始技能拷入 Volume
+    if [ ! -d "$WORK_DIR/skills/web_search" ]; then
+        mkdir -p "$WORK_DIR/skills"
+        cp -r "$REPO_DIR/init_skills/"* "$WORK_DIR/skills/" 2>/dev/null || true
+        echo "[Watchdog] 初始技能已桥接至 Volume。"
+    fi
+
     start_node
 
-    # 保持容器活跃（Zeabur 要求前台进程不退出）
-    while true; do sleep 3600; done
-    ;;
+    # 维持 PID 1 存活，并允许 trap 响应
+    while true; do sleep 3600 & wait $!; done
+fi
 
-  update)
-    echo "=== 🔄 Phoenix Watchdog: UPDATE MODE ==="
-    echo "Teddy triggered evolution, backing up skills..."
-
-    # 备份现有技能
+if [ "${1:-}" == "update" ]; then
+    echo "[Watchdog] Teddy 触发自我进化，开始备份技能..."
     cp -r "$WORK_DIR/skills" "$WORK_DIR/.backup_skills"
 
-    # 重启 Gateway
-    if [ -n "$NODE_PID" ]; then
-      kill "$NODE_PID" 2>/dev/null || true
-    fi
+    kill_node
     start_node
 
-    # 健康检查
-    if wait_healthy; then
-      echo "✅ Update successful, removing backup."
-      rm -rf "$WORK_DIR/.backup_skills"
-      exit 0
-    fi
+    # 60秒心跳验证 (验证端口连通性)
+    for i in $(seq 1 12); do
+        sleep 5
+        if curl -s "http://127.0.0.1:$PORT" > /dev/null; then
+            echo "[Watchdog] 进化成功，心跳正常。"
+            exit 0
+        fi
+    done
 
-    # 健康检查失败 → 回滚
-    echo "🔴 Teddy Brain Death! Rolling back..."
+    echo "[Watchdog] 🚨 致命错误：心跳丢失，Teddy 脑死！执行 Rollback..."
     rm -rf "$WORK_DIR/skills"
     mv "$WORK_DIR/.backup_skills" "$WORK_DIR/skills"
-    kill "$NODE_PID" 2>/dev/null || true
+    kill_node
     start_node
     echo "Rollback triggered at $(date)" > "$WORK_DIR/rollback.log"
-    echo "⚠️  Rollback complete. Check $WORK_DIR/rollback.log"
-    ;;
-
-  *)
-    echo "Usage: phoenix_watchdog.sh {start|update}"
-    exit 1
-    ;;
-esac
+fi
