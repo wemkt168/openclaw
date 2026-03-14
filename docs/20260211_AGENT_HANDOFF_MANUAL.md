@@ -25,7 +25,7 @@
 | `OPENROUTER_API_KEY` | **模型密钥** | 🔴 **极高** | 真实值见 `.env.zeabur` |
 | `OPENCLAW_GATEWAY_TOKEN` | **认证令牌** | 🔴 **极高** | 真实值见 `.env.zeabur` |
 | `TELEGRAM_BOT_TOKEN` | **Telegram 机器人密钥** | 🟡 中等 | (已禁用，需在 UI 开启) |
-| `BRAVE_SEARCH_API_KEY` | **联网搜索密钥** | 🟡 中等 | 真实值见 `.env.zeabur` |
+| `BRAVE_API_KEY` | **联网搜索密钥** | 🟡 中等 | 真实值见 `.env.zeabur` |
 | `POSTGRES_...` | **数据库连接** | 🟢 系统级 | 真实值见 `.env.zeabur` |
 | `S3_...` | **对象存储 (MinIO)** | 🟢 系统级 | 真实值见 `.env.zeabur` |
 

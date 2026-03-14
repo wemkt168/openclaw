@@ -25,7 +25,7 @@
 | `OPENROUTER_API_KEY` | **模型密钥** | 🔴 **极高** | 真实值见 `.env.zeabur` |
 | `OPENCLAW_GATEWAY_TOKEN` | **认证令牌** | 🔴 **极高** | 真实值见 `.env.zeabur` |
 | `TELEGRAM_BOT_TOKEN` | **Telegram 机器人密钥** | 🟡 中等 | (已禁用，需在 UI 开启) |
-| `BRAVE_SEARCH_API_KEY` | **联网搜索密钥** | 🟡 中等 | 真实值见 `.env.zeabur` |
+| `BRAVE_API_KEY` | **联网搜索密钥** | 🟡 中等 | 真实值见 `.env.zeabur` |
 | `POSTGRES_...` | **数据库连接** | 🟢 系统级 | 真实值见 `.env.zeabur` |
 | `S3_...` | **对象存储 (MinIO)** | 🟢 系统级 | 真实值见 `.env.zeabur` |
 
@@ -74,7 +74,7 @@ We manage secrets in two places:
 | `OPENROUTER_API_KEY` | **LLM API Key** | 🔴 **High** | See `.env.zeabur` for value |
 | `OPENCLAW_GATEWAY_TOKEN` | **Auth Token** | 🔴 **High** | See `.env.zeabur` for value |
 | `TELEGRAM_BOT_TOKEN` | **Telegram Bot Token** | 🟡 Medium | (Disabled, verify in UI) |
-| `BRAVE_SEARCH_API_KEY` | **Web Search Key** | 🟡 Medium | See `.env.zeabur` for value |
+| `BRAVE_API_KEY` | **Web Search Key** | 🟡 Medium | See `.env.zeabur` for value |
 | `POSTGRES_...` | **Database Config** | 🟢 System | See `.env.zeabur` for value |
 | `S3_...` | **Object Storage** | 🟢 System | See `.env.zeabur` for value |
 

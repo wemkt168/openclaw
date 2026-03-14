@@ -5,7 +5,7 @@
 ## 准备步骤 (Prerequisites)
 
 1.  **Zeabur 账号**: 已准备好项目。
-2.  **API Keys**: 准备好 `OPENROUTER_API_KEY`, `OPENCLAW_GATEWAY_TOKEN`, `BRAVE_SEARCH_API_KEY`。
+2.  **API Keys**: 准备好 `OPENROUTER_API_KEY`, `OPENCLAW_GATEWAY_TOKEN`, `BRAVE_API_KEY`。
 
 ---
 
@@ -37,7 +37,7 @@ git push
 在 Zeabur Dashboard -> Variables 中设置：
 *   `OPENROUTER_API_KEY`: `sk-or-v1-...`
 *   `OPENCLAW_GATEWAY_TOKEN`: `MySecretToken123`
-*   `BRAVE_SEARCH_API_KEY`: `...` (可选)
+*   `BRAVE_API_KEY`: `...` (可选)
 *   `TELEGRAM_BOT_TOKEN`: (可选，即便设置了也不会被使用，除非你手动修改 JSON 开启)
 
 ### 5. 等待部署 (Wait for Deployment)

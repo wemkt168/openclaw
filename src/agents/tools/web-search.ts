@@ -32,6 +32,14 @@ const SEARCH_CACHE = new Map<string, CacheEntry<Record<string, unknown>>>();
 const BRAVE_FRESHNESS_SHORTCUTS = new Set(["pd", "pw", "pm", "py"]);
 const BRAVE_FRESHNESS_RANGE = /^(\d{4}-\d{2}-\d{2})to(\d{4}-\d{2}-\d{2})$/;
 
+// Condition 3: API Key 验证结果缓存 (TTL: 1 hour，防止 Rate Limit)
+const API_KEY_VALIDATION_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+type ApiKeyValidationEntry = {
+  result: { valid: boolean; status?: number; error?: string };
+  expiresAt: number;
+};
+const API_KEY_VALIDATION_CACHE = new Map<string, ApiKeyValidationEntry>();
+
 const WebSearchSchema = Type.Object({
   query: Type.String({ description: "Search query string." }),
   count: Type.Optional(
@@ -121,9 +129,13 @@ function resolveSearchEnabled(params: { search?: WebSearchConfig; sandboxed?: bo
   return true;
 }
 
-function resolveSearchApiKey(search?: WebSearchConfig): string | undefined {
+function resolveSearchApiKey(search?: WebSearchConfig, override?: string): string | undefined {
+  // 多租户优先级: override (显式注入) > config > env
+  const fromOverride = override?.trim() ?? "";
+  if (fromOverride) return fromOverride;
   const fromConfig =
     search && "apiKey" in search && typeof search.apiKey === "string" ? search.apiKey.trim() : "";
+  // 唯一真理标准: BRAVE_API_KEY
   const fromEnv = (process.env.BRAVE_API_KEY ?? "").trim();
   return fromConfig || fromEnv || undefined;
 }
@@ -169,10 +181,16 @@ function resolvePerplexityConfig(search?: WebSearchConfig): PerplexityConfig {
   return perplexity as PerplexityConfig;
 }
 
-function resolvePerplexityApiKey(perplexity?: PerplexityConfig): {
+function resolvePerplexityApiKey(perplexity?: PerplexityConfig, override?: string): {
   apiKey?: string;
   source: PerplexityApiKeySource;
 } {
+  // 多租户优先级: override (显式注入) > config > env
+  const fromOverride = normalizeApiKey(override);
+  if (fromOverride) {
+    return { apiKey: fromOverride, source: "config" };
+  }
+
   const fromConfig = normalizeApiKey(perplexity?.apiKey);
   if (fromConfig) {
     return { apiKey: fromConfig, source: "config" };
@@ -461,6 +479,10 @@ async function runWebSearch(params: {
 export function createWebSearchTool(options?: {
   config?: OpenClawConfig;
   sandboxed?: boolean;
+  /** 多租户: 显式传入的 Brave API Key。 */
+  apiKeyOverride?: string;
+  /** 多租户: 显式传入的 Perplexity API Key。 */
+  perplexityApiKeyOverride?: string;
 }): AnyAgentTool | null {
   const search = resolveSearchConfig(options?.config);
   if (!resolveSearchEnabled({ search, sandboxed: options?.sandboxed })) {
@@ -482,9 +504,9 @@ export function createWebSearchTool(options?: {
     parameters: WebSearchSchema,
     execute: async (_toolCallId, args) => {
       const perplexityAuth =
-        provider === "perplexity" ? resolvePerplexityApiKey(perplexityConfig) : undefined;
+        provider === "perplexity" ? resolvePerplexityApiKey(perplexityConfig, options?.perplexityApiKeyOverride) : undefined;
       const apiKey =
-        provider === "perplexity" ? perplexityAuth?.apiKey : resolveSearchApiKey(search);
+        provider === "perplexity" ? perplexityAuth?.apiKey : resolveSearchApiKey(search, options?.apiKeyOverride);
 
       if (!apiKey) {
         return jsonResult(missingSearchKeyPayload(provider));
@@ -536,8 +558,100 @@ export function createWebSearchTool(options?: {
   };
 }
 
+/**
+ * 预检: 验证 Brave Search API Key 是否有效。
+ * 向 Brave API 发送一次轻量级测试请求 (count=1)。
+ * 返回 401/403 时抛出明确异常 (Fail-Fast)。
+ *
+ * Condition 3: 带内存缓存 (TTL: 1h)，避免反复消耗真实 API 请求。
+ * 缓存存活期内直接跳过 HTTP 预检。
+ */
+export async function validateBraveApiKey(
+  apiKey: string,
+  timeoutSeconds = 5,
+): Promise<{ valid: boolean; status?: number; error?: string }> {
+  // 查缓存：命中且未过期则直接返回
+  const cacheKey = apiKey.trim();
+  const cached = API_KEY_VALIDATION_CACHE.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.result;
+  }
+
+  try {
+    const url = new URL(BRAVE_SEARCH_ENDPOINT);
+    url.searchParams.set("q", "test");
+    url.searchParams.set("count", "1");
+
+    const res = await fetch(url.toString(), {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "X-Subscription-Token": apiKey,
+      },
+      signal: withTimeout(undefined, timeoutSeconds * 1000),
+    });
+
+    if (res.status === 401 || res.status === 403) {
+      const detail = await readResponseText(res);
+      const result = {
+        valid: false as const,
+        status: res.status,
+        error: `Brave API Key 无效 (${res.status}): ${detail || res.statusText}`,
+      };
+      // 无效 Key 也缓存（短 TTL: 5 分钟），避免重复探测
+      API_KEY_VALIDATION_CACHE.set(cacheKey, {
+        result,
+        expiresAt: Date.now() + 5 * 60 * 1000,
+      });
+      return result;
+    }
+
+    if (!res.ok) {
+      const detail = await readResponseText(res);
+      const result = {
+        valid: false as const,
+        status: res.status,
+        error: `Brave API 异常 (${res.status}): ${detail || res.statusText}`,
+      };
+      // 异常状态不长缓存（30s），允许快速重试
+      API_KEY_VALIDATION_CACHE.set(cacheKey, {
+        result,
+        expiresAt: Date.now() + 30 * 1000,
+      });
+      return result;
+    }
+
+    const result = { valid: true as const, status: res.status };
+    // 有效 Key 缓存 1 小时
+    API_KEY_VALIDATION_CACHE.set(cacheKey, {
+      result,
+      expiresAt: Date.now() + API_KEY_VALIDATION_CACHE_TTL_MS,
+    });
+    return result;
+  } catch (err) {
+    const result = {
+      valid: false as const,
+      error: `Brave API 连接失败: ${err instanceof Error ? err.message : String(err)}`,
+    };
+    // 网络错误短缓存（10s），允许快速重试
+    API_KEY_VALIDATION_CACHE.set(cacheKey, {
+      result,
+      expiresAt: Date.now() + 10 * 1000,
+    });
+    return result;
+  }
+}
+
+/** 清除 API Key 验证缓存（用于测试或强制刷新） */
+export function clearApiKeyValidationCache(): void {
+  API_KEY_VALIDATION_CACHE.clear();
+}
+
 export const __testing = {
   inferPerplexityBaseUrlFromApiKey,
   resolvePerplexityBaseUrl,
   normalizeFreshness,
+  resolveSearchApiKey,
+  validateBraveApiKey,
+  clearApiKeyValidationCache,
 } as const;

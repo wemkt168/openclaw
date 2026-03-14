@@ -326,7 +326,7 @@ exit $EXIT_CODE
         "web": {
             "search": {
                 "enabled": true,
-                "apiKey": "${BRAVE_SEARCH_API_KEY}"
+                "apiKey": "${BRAVE_API_KEY}"
             },
             "fetch": {
                 "enabled": true

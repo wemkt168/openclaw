@@ -57,6 +57,10 @@ export function createOpenClawTools(options?: {
   requireExplicitMessageTarget?: boolean;
   /** If true, omit the message tool from the tool list. */
   disableMessageTool?: boolean;
+  /** 多租户: 显式注入的 Brave Search API Key (优先级高于 config/env)。 */
+  tenantBraveApiKey?: string;
+  /** 多租户: 显式注入的 Perplexity API Key (优先级高于 config/env)。 */
+  tenantPerplexityApiKey?: string;
 }): AnyAgentTool[] {
   const imageTool = options?.agentDir?.trim()
     ? createImageTool({
@@ -69,6 +73,9 @@ export function createOpenClawTools(options?: {
   const webSearchTool = createWebSearchTool({
     config: options?.config,
     sandboxed: options?.sandboxed,
+    // Gateway Mapper 多租户 API Key 注入
+    apiKeyOverride: options?.tenantBraveApiKey,
+    perplexityApiKeyOverride: options?.tenantPerplexityApiKey,
   });
   const webFetchTool = createWebFetchTool({
     config: options?.config,
