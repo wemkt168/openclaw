@@ -169,7 +169,7 @@ node scripts/ensure-zeabur-config.js
 # 2.1 [中文说明] 禁用 Telegram 集成 (用户要求)
 # [中文说明] 我们移除了此环境变量，防止 OpenClaw 尝试自动连接并因 Token 错误而崩溃。
 # 2.1 Disable Telegram Integration (User Request)
-# The user wants to configure Telegram manually later. 
+# The user wants to configure Telegram manually later.
 # We unset this env var so OpenClaw doesn't try to auto-connect and crash on 401.
 echo "Disabling Telegram integration (unset TELEGRAM_BOT_TOKEN)..."
 unset TELEGRAM_BOT_TOKEN
@@ -238,109 +238,98 @@ exit $EXIT_CODE
 
 ```json
 {
-    "env": {
-        "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY}",
-        "TELEGRAM_BOT_TOKEN": "${TELEGRAM_BOT_TOKEN}"
-    },
-    "agents": {
-        "defaults": {
-            "models": {
-                "openrouter/anthropic/claude-sonnet-4": {
-                    "alias": "sonnet"
-                },
-                "openrouter/google/gemini-2.0-flash-001": {
-                    "alias": "flash"
-                },
-                "openrouter/anthropic/claude-3-opus": {
-                    "alias": "opus"
-                },
-                "openrouter/openai/gpt-4o": {
-                    "alias": "gpt4o"
-                }
-            },
-            "model": {
-                "primary": "openrouter/google/gemini-2.0-flash-001",
-                "fallbacks": [
-                    "openrouter/anthropic/claude-sonnet-4",
-                    "openrouter/openai/gpt-4o"
-                ]
-            },
-            "workspace": "/root/.openclaw/workspace",
-            "sandbox": {
-                "mode": "off"
-            },
-            "thinkingDefault": "low",
-            "elevatedDefault": "on",
-            "timeoutSeconds": 1800,
-            "subagents": {
-                "model": "openrouter/google/gemini-2.0-flash-001",
-                "maxConcurrent": 2
-            }
+  "env": {
+    "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY}",
+    "TELEGRAM_BOT_TOKEN": "${TELEGRAM_BOT_TOKEN}"
+  },
+  "agents": {
+    "defaults": {
+      "models": {
+        "openrouter/anthropic/claude-sonnet-4": {
+          "alias": "sonnet"
         },
-        "list": [
-            {
-                "id": "master",
-                "default": true,
-                "identity": {
-                    "name": "OpenClaw",
-                    "theme": "进化体",
-                    "emoji": "🧬"
-                }
-            }
-        ]
-    },
-    "gateway": {
-        "bind": "lan",
-        "port": 8080,
-        "trustedProxies": [
-            "10.0.0.0/8",
-            "172.16.0.0/12",
-            "192.168.0.0/16"
-        ],
-        "controlUi": {
-            "allowInsecureAuth": true
+        "openrouter/google/gemini-2.0-flash-001": {
+          "alias": "flash"
         },
-        "auth": {
-            "mode": "token",
-            "token": "${OPENCLAW_GATEWAY_TOKEN}"
-        }
-    },
-    "channels": {
-        "telegram": {
-            "enabled": false
-        }
-    },
-    "tools": {
-        "profile": "full",
-        "elevated": {
-            "enabled": true,
-            "allowFrom": {
-                "telegram": [
-                    "*"
-                ],
-                "web": [
-                    "*"
-                ]
-            }
+        "openrouter/anthropic/claude-3-opus": {
+          "alias": "opus"
         },
-        "web": {
-            "search": {
-                "enabled": true,
-                "apiKey": "${BRAVE_API_KEY}"
-            },
-            "fetch": {
-                "enabled": true
-            }
+        "openrouter/openai/gpt-4o": {
+          "alias": "gpt4o"
         }
+      },
+      "model": {
+        "primary": "openrouter/google/gemini-2.0-flash-001",
+        "fallbacks": ["openrouter/anthropic/claude-sonnet-4", "openrouter/openai/gpt-4o"]
+      },
+      "workspace": "/root/.openclaw/workspace",
+      "sandbox": {
+        "mode": "off"
+      },
+      "thinkingDefault": "low",
+      "elevatedDefault": "on",
+      "timeoutSeconds": 1800,
+      "subagents": {
+        "model": "openrouter/google/gemini-2.0-flash-001",
+        "maxConcurrent": 2
+      }
     },
-    "commands": {
-        "native": "auto",
-        "text": true,
-        "bash": true,
-        "config": true
+    "list": [
+      {
+        "id": "master",
+        "default": true,
+        "identity": {
+          "name": "OpenClaw",
+          "theme": "进化体",
+          "emoji": "🧬"
+        }
+      }
+    ]
+  },
+  "gateway": {
+    "bind": "lan",
+    "port": 8080,
+    "trustedProxies": ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"],
+    "controlUi": {
+      "allowInsecureAuth": true
     },
-    "logging": {
-        "level": "info"
+    "auth": {
+      "mode": "token",
+      "token": "${OPENCLAW_GATEWAY_TOKEN}"
     }
+  },
+  "channels": {
+    "telegram": {
+      "enabled": false
+    }
+  },
+  "tools": {
+    "profile": "full",
+    "elevated": {
+      "enabled": true,
+      "allowFrom": {
+        "telegram": ["*"],
+        "web": ["*"]
+      }
+    },
+    "web": {
+      "search": {
+        "enabled": true,
+        "apiKey": "${BRAVE_API_KEY}"
+      },
+      "fetch": {
+        "enabled": true
+      }
+    }
+  },
+  "commands": {
+    "native": "auto",
+    "text": true,
+    "bash": true,
+    "config": true
+  },
+  "logging": {
+    "level": "info"
+  }
 }
 ```

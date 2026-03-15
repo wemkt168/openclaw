@@ -1,33 +1,33 @@
 {
-    "name": "openclaw",
-    "expose": {
-        "port": 8080,
-        "protocol": "http"
+  "name": "openclaw",
+  "expose": {
+    "port": 8080,
+    "protocol": "http"
+  },
+  "healthCheck": {
+    "path": "/",
+    "timeout": 30
+  },
+  "env": {
+    "GATEWAY_TOKEN": {
+      "description": "【必填】客户 Gateway 接入密钥，随机生成即可 (e.g. openssl rand -hex 32)",
+      "required": true
     },
-    "healthCheck": {
-        "path": "/",
-        "timeout": 30
+    "BRAVE_API_KEY": {
+      "description": "【沙盒回退】Brave Search API Key，新手引导用。付费租户可留空由 tenantVars 覆盖",
+      "required": false
     },
-    "env": {
-        "GATEWAY_TOKEN": {
-            "description": "【必填】客户 Gateway 接入密钥，随机生成即可 (e.g. openssl rand -hex 32)",
-            "required": true
-        },
-        "BRAVE_API_KEY": {
-            "description": "【沙盒回退】Brave Search API Key，新手引导用。付费租户可留空由 tenantVars 覆盖",
-            "required": false
-        },
-        "PERPLEXITY_API_KEY": {
-            "description": "【沙盒回退】Perplexity API Key，新手引导用。付费租户可留空由 tenantVars 覆盖",
-            "required": false
-        },
-        "OPENROUTER_API_KEY": {
-            "description": "【AI 推理】OpenRouter API Key，用于 Agent 主模型推理（必须配置）",
-            "required": true
-        },
-        "PORT": {
-            "description": "服务监听端口，默认 8080，与 expose.port 保持一致",
-            "default": "8080"
-        }
+    "PERPLEXITY_API_KEY": {
+      "description": "【沙盒回退】Perplexity API Key，新手引导用。付费租户可留空由 tenantVars 覆盖",
+      "required": false
+    },
+    "OPENROUTER_API_KEY": {
+      "description": "【AI 推理】OpenRouter API Key，用于 Agent 主模型推理（必须配置）",
+      "required": true
+    },
+    "PORT": {
+      "description": "服务监听端口，默认 8080，与 expose.port 保持一致",
+      "default": "8080"
     }
-}
+  }
+}

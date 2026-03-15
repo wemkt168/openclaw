@@ -20,7 +20,9 @@ This skill empowers OpenClaw (Teddy) to maintain, update, and evolve its own cod
 > **MANDATORY**: Before installing ANY new skill or running ANY external code, you MUST scan it using `skill-scanner`.
 
 ### Scanner Setup
+
 First, ensure the scanner is installed on the host:
+
 ```bash
 # Check if installed
 pip show cisco-ai-skill-scanner
@@ -30,14 +32,15 @@ pip install cisco-ai-skill-scanner
 ```
 
 ### Protocol for New Skills/Capabilities
+
 1.  **Download/Read**: Save the potential skill code to a temporary file (e.g., `temp_skill.md`).
 2.  **Scan**: Run the scanner against the file.
     ```bash
     skill-scanner scan ./temp_skill.md --use-llm
     ```
 3.  **Evaluate**:
-    *   **SAFE**: Proceed to install/move to `skills/` directory.
-    *   **WARNING/UNSAFE**: **DELETE IMMEDIATELY**. Do not execute. Report to user.
+    - **SAFE**: Proceed to install/move to `skills/` directory.
+    - **WARNING/UNSAFE**: **DELETE IMMEDIATELY**. Do not execute. Report to user.
 
 ## Workflows
 
@@ -56,7 +59,7 @@ pnpm install
 pnpm build
 
 # 4. Verify build runs correctly
-pnpm check 
+pnpm check
 
 # 5. Restart (if successful)
 # WARNING: This stops the current process. Ensure you have a way to restart or runs as a service.
@@ -95,15 +98,15 @@ To modify the codebase (e.g., adding a new tool or fixing a bug):
 
 If you need to reload configuration or apply code changes:
 
--   **Preferred**: `openclaw gateway restart` (if CLI is available and managing the process)
--   **Alternative**: `pkill -f openclaw-gateway` (will require external supervisor to restart it)
--   **Zeabur/Docker**: `exit 0` (container orchestration will restart the pod)
+- **Preferred**: `openclaw gateway restart` (if CLI is available and managing the process)
+- **Alternative**: `pkill -f openclaw-gateway` (will require external supervisor to restart it)
+- **Zeabur/Docker**: `exit 0` (container orchestration will restart the pod)
 
 ## Environment Context
 
--   **Project Root**: `/home/node/.openclaw/workspace` or current working directory.
--   **Package Manager**: `pnpm` is preferred, `npm` is fallback.
--   **Service Manager**: Depends on OS (systemd on Linux, launchd on macOS).
+- **Project Root**: `/home/node/.openclaw/workspace` or current working directory.
+- **Package Manager**: `pnpm` is preferred, `npm` is fallback.
+- **Service Manager**: Depends on OS (systemd on Linux, launchd on macOS).
 
 ## Example: "Teddy, please update yourself"
 

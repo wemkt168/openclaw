@@ -74,3 +74,8 @@ For each component in the `components` array, the following rules apply:
 
 - **Required**: Must have a `delete` property set to `true`.
 - No other properties are allowed.
+
+Description: 防幻觉与代码查阅准则
+Content:
+任何修改动作前【最高行动准则】：绝对禁止依赖预训练记忆凭空猜测代码逻辑。在编写或修改任何代码前，你必须强制执行以下动作：1. 查阅专案根目录的 package.json、README.md。 2. 查阅你要修改的目标档案的上下文。经过真实比对确认后，才能动手写代码。
+

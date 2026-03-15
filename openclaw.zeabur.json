@@ -1,146 +1,129 @@
 {
-    "env": {
-        "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY}",
-        "TELEGRAM_BOT_TOKEN": "8249890115:AAFaRXbSOzZ3ZG2tmLvggLNbmZFflxNKHtQ"
-    },
-    "agents": {
-        "defaults": {
-            "models": {
-                "openrouter/anthropic/claude-sonnet-4": {
-                    "alias": "sonnet"
-                },
-                "openrouter/google/gemini-2.0-flash-001": {
-                    "alias": "flash"
-                },
-                "openrouter/anthropic/claude-3-opus": {
-                    "alias": "opus"
-                },
-                "openrouter/openai/gpt-4o": {
-                    "alias": "gpt4o"
-                }
-            },
-            "model": {
-                "primary": "openrouter/google/gemini-2.0-flash-001",
-                "fallbacks": [
-                    "openrouter/anthropic/claude-sonnet-4",
-                    "openrouter/openai/gpt-4o"
-                ]
-            },
-            "workspace": "/home/node/.openclaw/workspace",
-            "sandbox": {
-                "mode": "off"
-            },
-            "thinkingDefault": "low",
-            "elevatedDefault": "on",
-            "timeoutSeconds": 1800,
-            "subagents": {
-                "model": "openrouter/google/gemini-2.0-flash-001",
-                "maxConcurrent": 2
-            },
-            "memorySearch": {
-                "enabled": true,
-                "sources": [
-                    "memory",
-                    "sessions"
-                ],
-                "provider": "openai",
-                "remote": {
-                    "baseUrl": "https://openrouter.ai/api/v1",
-                    "headers": {
-                        "Authorization": "Bearer ${OPENROUTER_API_KEY}",
-                        "HTTP-Referer": "https://openclaw.ai",
-                        "X-Title": "OpenClaw Memory"
-                    }
-                },
-                "model": "openai/text-embedding-3-small"
-            }
+  "env": {
+    "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY}",
+    "TELEGRAM_BOT_TOKEN": "8249890115:AAFaRXbSOzZ3ZG2tmLvggLNbmZFflxNKHtQ"
+  },
+  "agents": {
+    "defaults": {
+      "models": {
+        "openrouter/anthropic/claude-sonnet-4": {
+          "alias": "sonnet"
         },
-        "list": [
-            {
-                "id": "main",
-                "default": true,
-                "identity": {
-                    "name": "OpenClaw",
-                    "theme": "进化体",
-                    "emoji": "🧬"
-                }
-            }
-        ]
-    },
-    "gateway": {
-        "port": 8080,
-        "bind": "lan",
-        "controlUi": {
-            "allowInsecureAuth": true
+        "openrouter/google/gemini-2.0-flash-001": {
+          "alias": "flash"
         },
-        "auth": {
-            "mode": "token",
-            "token": "${OPENCLAW_GATEWAY_TOKEN}"
+        "openrouter/anthropic/claude-3-opus": {
+          "alias": "opus"
         },
-        "trustedProxies": [
-            "10.0.0.0/8",
-            "172.16.0.0/12",
-            "192.168.0.0/16",
-            "10.42.0.0/16"
-        ]
-    },
-    "channels": {
-        "telegram": {
-            "enabled": true,
-            "dmPolicy": "allowlist",
-            "botToken": "${TELEGRAM_BOT_TOKEN}",
-            "allowFrom": [
-                "7322349199"
-            ],
-            "groupPolicy": "disabled",
-            "streamMode": "partial"
+        "openrouter/openai/gpt-4o": {
+          "alias": "gpt4o"
         }
-    },
-    "messages": {
-        "ackReactionScope": "group-mentions"
-    },
-    "tools": {
-        "profile": "full",
-        "elevated": {
-            "enabled": true,
-            "allowFrom": {
-                "telegram": [
-                    "*"
-                ],
-                "web": [
-                    "*"
-                ]
-            }
+      },
+      "model": {
+        "primary": "openrouter/google/gemini-2.0-flash-001",
+        "fallbacks": ["openrouter/anthropic/claude-sonnet-4", "openrouter/openai/gpt-4o"]
+      },
+      "workspace": "/home/node/.openclaw/workspace",
+      "sandbox": {
+        "mode": "off"
+      },
+      "thinkingDefault": "low",
+      "elevatedDefault": "on",
+      "timeoutSeconds": 1800,
+      "subagents": {
+        "model": "openrouter/google/gemini-2.0-flash-001",
+        "maxConcurrent": 2
+      },
+      "memorySearch": {
+        "enabled": true,
+        "sources": ["memory", "sessions"],
+        "provider": "openai",
+        "remote": {
+          "baseUrl": "https://openrouter.ai/api/v1",
+          "headers": {
+            "Authorization": "Bearer ${OPENROUTER_API_KEY}",
+            "HTTP-Referer": "https://openclaw.ai",
+            "X-Title": "OpenClaw Memory"
+          }
         },
-        "web": {
-            "search": {
-                "enabled": true,
-                "provider": "perplexity",
-                "perplexity": {
-                    "model": "perplexity/sonar-reasoning"
-                }
-            },
-            "fetch": {
-                "enabled": true
-            }
-        },
-        "exec": {
-            "host": "gateway",
-            "security": "full",
-            "ask": "off",
-            "backgroundMs": 10000,
-            "timeoutSec": 3600,
-            "cleanupMs": 3600000,
-            "notifyOnExit": true
+        "model": "openai/text-embedding-3-small"
+      }
+    },
+    "list": [
+      {
+        "id": "main",
+        "default": true,
+        "identity": {
+          "name": "OpenClaw",
+          "theme": "进化体",
+          "emoji": "🧬"
         }
+      }
+    ]
+  },
+  "gateway": {
+    "port": 8080,
+    "bind": "lan",
+    "controlUi": {
+      "allowInsecureAuth": true
     },
-    "commands": {
-        "native": "auto",
-        "text": true,
-        "bash": true,
-        "config": true
+    "auth": {
+      "mode": "token",
+      "token": "${OPENCLAW_GATEWAY_TOKEN}"
     },
-    "logging": {
-        "level": "info"
+    "trustedProxies": ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "10.42.0.0/16"]
+  },
+  "channels": {
+    "telegram": {
+      "enabled": true,
+      "dmPolicy": "allowlist",
+      "botToken": "${TELEGRAM_BOT_TOKEN}",
+      "allowFrom": ["7322349199"],
+      "groupPolicy": "disabled",
+      "streamMode": "partial"
     }
+  },
+  "messages": {
+    "ackReactionScope": "group-mentions"
+  },
+  "tools": {
+    "profile": "full",
+    "elevated": {
+      "enabled": true,
+      "allowFrom": {
+        "telegram": ["*"],
+        "web": ["*"]
+      }
+    },
+    "web": {
+      "search": {
+        "enabled": true,
+        "provider": "perplexity",
+        "perplexity": {
+          "model": "perplexity/sonar-reasoning"
+        }
+      },
+      "fetch": {
+        "enabled": true
+      }
+    },
+    "exec": {
+      "host": "gateway",
+      "security": "full",
+      "ask": "off",
+      "backgroundMs": 10000,
+      "timeoutSec": 3600,
+      "cleanupMs": 3600000,
+      "notifyOnExit": true
+    }
+  },
+  "commands": {
+    "native": "auto",
+    "text": true,
+    "bash": true,
+    "config": true
+  },
+  "logging": {
+    "level": "info"
+  }
 }

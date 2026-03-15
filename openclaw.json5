@@ -1,49 +1,41 @@
 {
-  "meta": {
-    "lastTouchedVersion": "2026.2.4",
-    "lastTouchedAt": "2026-02-23T14:20:50.097Z"
+  meta: {
+    lastTouchedVersion: "2026.2.4",
+    lastTouchedAt: "2026-02-23T14:20:50.097Z",
   },
-  "env": {
-    "OPENROUTER_API_KEY": "你的OpenRouter_API_Key_写在这里",
-    "TELEGRAM_BOT_TOKEN": "你的Telegram_Bot_Token_写在这里"
+  env: {
+    OPENROUTER_API_KEY: "你的OpenRouter_API_Key_写在这里",
+    TELEGRAM_BOT_TOKEN: "你的Telegram_Bot_Token_写在这里",
   },
-  "gateway": {
-    "port": 8080,
-    "bind": "lan",
-    "controlUi": {
-      "allowInsecureAuth": true
+  gateway: {
+    port: 8080,
+    bind: "lan",
+    controlUi: {
+      allowInsecureAuth: true,
     },
-    "auth": {
-      "mode": "token",
-      "token": "5a478335032d84784407841753900222"
+    auth: {
+      mode: "token",
+      token: "5a478335032d84784407841753900222",
     },
-    "trustedProxies": [
-      "10.0.0.0/8",
-      "172.16.0.0/12",
-      "192.168.0.0/16",
-      "10.42.0.0/16"
-    ]
+    trustedProxies: ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "10.42.0.0/16"],
   },
-  "commands": {
-    "native": "auto",
-    "nativeSkills": "auto",
-    "config": true,
-    "bash": true
+  commands: {
+    native: "auto",
+    nativeSkills: "auto",
+    config: true,
+    bash: true,
   },
-  "agents": {
-    "defaults": {
-      "maxConcurrent": 4,
-      "subagents": {
-        "maxConcurrent": 8,
-        "model": "openrouter/google/gemini-2.0-flash-001"
+  agents: {
+    defaults: {
+      maxConcurrent: 4,
+      subagents: {
+        maxConcurrent: 8,
+        model: "openrouter/google/gemini-2.0-flash-001",
       },
-      "model": {
-        "primary": "openrouter/google/gemini-2.0-flash-001",
-        "fallbacks": [
-          "openrouter/anthropic/claude-3.5-sonnet",
-          "openrouter/openai/gpt-4o"
-        ]
-      }
-    }
-  }
+      model: {
+        primary: "openrouter/google/gemini-2.0-flash-001",
+        fallbacks: ["openrouter/anthropic/claude-3.5-sonnet", "openrouter/openai/gpt-4o"],
+      },
+    },
+  },
 }

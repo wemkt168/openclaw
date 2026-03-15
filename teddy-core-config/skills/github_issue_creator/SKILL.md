@@ -23,11 +23,11 @@ node ./teddy-core-config/skills/github_issue_creator/create_issue.mjs "问题简
 
 ## 环境变量
 
-| 变量 | 必填 | 说明 |
-|------|------|------|
-| `GITHUB_TOKEN` | ✅ | GitHub Personal Access Token |
-| `GITHUB_REPO` | ❌ | 目标仓库 (默认: `wemkt168/openclaw`) |
-| `DRY_RUN` | ❌ | 设为 `1` 跳过 API 调用（仅写本地草稿） |
+| 变量           | 必填 | 说明                                   |
+| -------------- | ---- | -------------------------------------- |
+| `GITHUB_TOKEN` | ✅   | GitHub Personal Access Token           |
+| `GITHUB_REPO`  | ❌   | 目标仓库 (默认: `wemkt168/openclaw`)   |
+| `DRY_RUN`      | ❌   | 设为 `1` 跳过 API 调用（仅写本地草稿） |
 
 ## 注意事项
 
