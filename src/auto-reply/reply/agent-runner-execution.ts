@@ -597,8 +597,15 @@ export async function runAgentTurnWithFallback(params: {
   );
 
   if (upgradeMatch) {
-    const targetModelId = upgradeMatch[1].trim();
+    let targetModelId = upgradeMatch[1].trim();
     const upgradeTask = upgradeMatch[2].trim();
+
+    if (targetModelId.toLowerCase() === "deepseek") {
+      targetModelId = "openrouter/deepseek/deepseek-chat";
+    } else if (targetModelId.toLowerCase() === "sonnet") {
+      targetModelId = "openrouter/anthropic/claude-3.7-sonnet";
+    }
+
     const [upProvider, ...upModelParts] = targetModelId.split("/");
     const upModel = upModelParts.join("/");
 
