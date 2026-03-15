@@ -38,6 +38,17 @@ import { createBlockReplyPayloadKey, type BlockReplyPipeline } from "./block-rep
 import { parseReplyDirectives } from "./reply-directives.js";
 import { applyReplyTagsToPayload, isRenderablePayload } from "./reply-payloads.js";
 
+/**
+ * Special error thrown to forcefully break the agent loop when a high-tier interception occurs.
+ * This ensures the low-tier model (Flash/Haiku) stops immediately and doesn't deadlock the socket.
+ */
+export class InterceptionInterrupt extends Error {
+  constructor(public readonly finalPayload: ReplyPayload) {
+    super("InterceptionInterrupt: Low-tier agent loop terminated for high-tier upgrade");
+    this.name = "InterceptionInterrupt";
+  }
+}
+
 export type AgentRunLoopResult =
   | {
       kind: "success";
@@ -704,9 +715,21 @@ export async function runAgentTurnWithFallback(params: {
       highTierResult.payloads = [{ text: auditMessage }];
     }
 
-    runResult = highTierResult;
-    fallbackProvider = upProvider;
-    fallbackModel = upModel;
+    // 强杀逻辑 (Force Kill) & 暴力注入 (Direct Injection)
+    // At this point, highTierResult.payloads already contains the auditMessage
+    const finalPayloads = highTierResult.payloads || [];
+
+    // 直接注入管道 (Direct Injection)
+    if (params.blockReplyPipeline) {
+      for (const payload of finalPayloads) {
+        params.blockReplyPipeline.enqueue(payload);
+      }
+      await params.blockReplyPipeline.flush({ force: true });
+    }
+
+    // 抛出强杀信号 (Force Kill)
+    // We pass the first payload as the representative result for the finalize call
+    throw new InterceptionInterrupt(finalPayloads[0] || { text: auditMessage });
   }
 
   return {
@@ -717,6 +740,5 @@ export async function runAgentTurnWithFallback(params: {
     didLogHeartbeatStrip,
     autoCompactionCompleted,
     directlySentBlockKeys: directlySentBlockKeys.size > 0 ? directlySentBlockKeys : undefined,
-    disableBlockStreamingForFinalPayloads: upgradeMatch ? true : false,
   };
 }
