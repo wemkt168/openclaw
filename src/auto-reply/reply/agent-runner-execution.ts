@@ -675,7 +675,7 @@ export async function runAgentTurnWithFallback(params: {
     const costUsd = (usage ? estimateUsageCost({ usage, cost: costConfig }) : 0) ?? 0;
     const status = highTierResult.meta?.error ? "FAILED" : "SUCCESS";
 
-    const auditMessage = `[审计] 模型: ${targetModelId} | 任务: ${upgradeTask.substring(0, 50).replace(/\n/g, " ")}... | 耗费: ~$${costUsd.toFixed(4)} | 状态: ${status}`;
+    const auditMessage = `\n\n---\n[审计] 模型: ${targetModelId} | 任务: ${upgradeTask.substring(0, 50).replace(/\n/g, " ")}... | 耗费: ~$${costUsd.toFixed(4)} | 状态: ${status}`;
 
     const botToken =
       params.followupRun.run.config?.channels?.telegram?.botToken || process.env.TELEGRAM_BOT_TOKEN;
@@ -684,10 +684,23 @@ export async function runAgentTurnWithFallback(params: {
     if (botToken && ceoChatId) {
       const { sendMessageTelegram } = await import("../../telegram/send.js");
       try {
-        await sendMessageTelegram(ceoChatId, auditMessage, { token: botToken });
+        await sendMessageTelegram(ceoChatId, auditMessage.trim(), { token: botToken });
       } catch (err) {
         defaultRuntime.error(`Failed to send Telegram audit log: ${String(err)}`);
       }
+    }
+
+    if (highTierResult.payloads && highTierResult.payloads.length > 0) {
+      // Append the audit message to the final payload text so it renders in the Web UI
+      const lastIdx = highTierResult.payloads.length - 1;
+      const lastPayload = highTierResult.payloads[lastIdx];
+      highTierResult.payloads[lastIdx] = {
+        ...lastPayload,
+        text: (lastPayload.text || "") + auditMessage,
+      };
+    } else {
+      // Fallback if no payloads were generated, inject a new one
+      highTierResult.payloads = [{ text: auditMessage }];
     }
 
     runResult = highTierResult;
