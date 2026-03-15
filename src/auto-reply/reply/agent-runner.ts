@@ -406,8 +406,16 @@ export async function runReplyAgent(params: {
       payloads: payloadArray,
       isHeartbeat,
       didLogHeartbeatStrip,
-      blockStreamingEnabled,
-      blockReplyPipeline,
+      blockStreamingEnabled:
+        "disableBlockStreamingForFinalPayloads" in runOutcome &&
+        runOutcome.disableBlockStreamingForFinalPayloads
+          ? false
+          : blockStreamingEnabled,
+      blockReplyPipeline:
+        "disableBlockStreamingForFinalPayloads" in runOutcome &&
+        runOutcome.disableBlockStreamingForFinalPayloads
+          ? null
+          : blockReplyPipeline,
       directlySentBlockKeys,
       replyToMode,
       replyToChannel,

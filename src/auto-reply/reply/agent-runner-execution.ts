@@ -48,6 +48,7 @@ export type AgentRunLoopResult =
       autoCompactionCompleted: boolean;
       /** Payload keys sent directly (not via pipeline) during tool flush. */
       directlySentBlockKeys?: Set<string>;
+      disableBlockStreamingForFinalPayloads?: boolean;
     }
   | { kind: "final"; payload: ReplyPayload };
 
@@ -716,5 +717,6 @@ export async function runAgentTurnWithFallback(params: {
     didLogHeartbeatStrip,
     autoCompactionCompleted,
     directlySentBlockKeys: directlySentBlockKeys.size > 0 ? directlySentBlockKeys : undefined,
+    disableBlockStreamingForFinalPayloads: upgradeMatch ? true : false,
   };
 }
