@@ -674,7 +674,17 @@ export async function runAgentTurnWithFallback(params: {
       timeoutMs: params.followupRun.run.timeoutMs,
       runId: crypto.randomUUID(),
       images: params.opts?.images,
+      // 核心修复：信号脱钩 (Signal Detachment)
+      // 绝不继承 params.followupRun.run.abortSignal
+      // 这确保了即便 Flash 被强杀抛出异常，DeepSeek 的网络请求依然能跑完
+      abortSignal: undefined,
     });
+
+    if (highTierResult.meta?.error) {
+      defaultRuntime.error(
+        `[Auditor] High-tier execution FAILED: ${String(highTierResult.meta.error)}`,
+      );
+    }
 
     const usage = highTierResult.meta?.agentMeta?.usage;
     const { resolveModelCostConfig, estimateUsageCost } =

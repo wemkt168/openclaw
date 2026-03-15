@@ -105,6 +105,7 @@ export async function runReplyAgent(params: {
   const activeSessionStore = sessionStore;
   let activeIsNewSession = isNewSession;
   let blockReplyPipeline: any = null; // Defined early for finally block closure
+  let capturedError: any = undefined; // Defined early for finally block closure
 
   try {
     const isHeartbeat = opts?.isHeartbeat === true;
@@ -337,6 +338,7 @@ export async function runReplyAgent(params: {
         return finalizeWithFollowup(runOutcome.payload, queueKey, runFollowupTurn);
       }
     } catch (err) {
+      capturedError = err;
       // Check for the Force Kill signal
       if (
         typeof err === "object" &&
@@ -546,7 +548,19 @@ export async function runReplyAgent(params: {
       runFollowupTurn,
     );
   } finally {
-    blockReplyPipeline?.stop();
-    typing.markRunComplete();
+    // 只有在非强杀（正常退出或普通报错）的情况下才清理。
+    // 如果是 InterceptionInterrupt，已经在外面 finalize 掉了。
+    // 如果在这里过早 stop()，DeepSeek 的后台注入可能会因为管道关闭而失败。
+    if (
+      !(
+        capturedError &&
+        typeof capturedError === "object" &&
+        "name" in capturedError &&
+        capturedError.name === "InterceptionInterrupt"
+      )
+    ) {
+      blockReplyPipeline?.stop();
+      typing.markRunComplete();
+    }
   }
 }
