@@ -40,6 +40,12 @@ type ToolsInvokeBody = {
   args?: unknown;
   sessionKey?: unknown;
   dryRun?: unknown;
+  /**
+   * 多租户内容变量注入。
+   * 客户端在 JSON5 任务请求中携带自己的 API Key，不依赖服务器级环境变量。
+   * 支持字段： BRAVE_API_KEY, PERPLEXITY_API_KEY 等。
+   */
+  tenantVars?: Record<string, unknown>;
 };
 
 function resolveSessionKeyFromBody(body: ToolsInvokeBody): string | undefined {
@@ -210,12 +216,26 @@ export async function handleToolsInvokeHttpRequest(
     ? resolveSubagentToolPolicy(cfg)
     : undefined;
 
+  // 多租户 API Key 提取：优先从 HTTP body 的 tenantVars 读取。
+  // 安全净化：只接受字符串，非字符串类型直接忽略。
+  const tenantVars =
+    body.tenantVars && typeof body.tenantVars === "object" && !Array.isArray(body.tenantVars)
+      ? (body.tenantVars as Record<string, unknown>)
+      : {};
+  const tenantBraveApiKey =
+    typeof tenantVars.BRAVE_API_KEY === "string" ? tenantVars.BRAVE_API_KEY.trim() || undefined : undefined;
+  const tenantPerplexityApiKey =
+    typeof tenantVars.PERPLEXITY_API_KEY === "string" ? tenantVars.PERPLEXITY_API_KEY.trim() || undefined : undefined;
+
   // Build tool list (core + plugin tools).
   const allTools = createOpenClawTools({
     agentSessionKey: sessionKey,
     agentChannel: messageChannel ?? undefined,
     agentAccountId: accountId,
     config: cfg,
+    // Gateway Mapper: 多租户 API Key 动态注入，优先级高于服务器配置和 env。
+    tenantBraveApiKey,
+    tenantPerplexityApiKey,
     pluginToolAllowlist: collectExplicitAllowlist([
       profilePolicy,
       providerProfilePolicy,
