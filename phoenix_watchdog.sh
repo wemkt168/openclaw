@@ -61,7 +61,7 @@ if [ "${1:-}" == "start" ]; then
     trap cleanup SIGINT SIGTERM
 
     # 首次开机：空盘桥接，把 GitHub 里的初始技能拷入 Volume
-    if [ ! -d "$WORK_DIR/skills/web_search" ]; then
+    if [ ! -d "$WORK_DIR/skills" ] && [ -d "$REPO_DIR/init_skills" ]; then
         mkdir -p "$WORK_DIR/skills"
         cp -r "$REPO_DIR/init_skills/"* "$WORK_DIR/skills/" 2>/dev/null || true
         echo "[Watchdog] 初始技能已桥接至 Volume。"
