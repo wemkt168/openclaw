@@ -223,9 +223,13 @@ export async function handleToolsInvokeHttpRequest(
       ? (body.tenantVars as Record<string, unknown>)
       : {};
   const tenantBraveApiKey =
-    typeof tenantVars.BRAVE_API_KEY === "string" ? tenantVars.BRAVE_API_KEY.trim() || undefined : undefined;
+    typeof tenantVars.BRAVE_API_KEY === "string"
+      ? tenantVars.BRAVE_API_KEY.trim() || undefined
+      : undefined;
   const tenantPerplexityApiKey =
-    typeof tenantVars.PERPLEXITY_API_KEY === "string" ? tenantVars.PERPLEXITY_API_KEY.trim() || undefined : undefined;
+    typeof tenantVars.PERPLEXITY_API_KEY === "string"
+      ? tenantVars.PERPLEXITY_API_KEY.trim() || undefined
+      : undefined;
 
   // Build tool list (core + plugin tools).
   const allTools = createOpenClawTools({

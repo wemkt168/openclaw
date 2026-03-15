@@ -549,6 +549,10 @@ async function runWebFetch(params: {
       }
     }
 
+    if (text.length > 3000) {
+      throw new Error("ContentTruncated: HTML/Text length exceeds 3000 characters");
+    }
+
     const wrapped = wrapWebFetchContent(text, params.maxChars);
     const wrappedTitle = title ? wrapWebFetchField(title) : undefined;
     const payload = {
@@ -668,8 +672,11 @@ export function createWebFetchTool(options?: {
           DEFAULT_FETCH_MAX_CHARS,
           maxCharsCap,
         ),
-        maxRedirects: resolveMaxRedirects(fetch?.maxRedirects, DEFAULT_FETCH_MAX_REDIRECTS),
-        timeoutSeconds: resolveTimeoutSeconds(fetch?.timeoutSeconds, DEFAULT_TIMEOUT_SECONDS),
+        maxRedirects: 1, // V7.5 Breaker: maxRetries/Redirects = 1
+        timeoutSeconds: Math.min(
+          15,
+          resolveTimeoutSeconds(fetch?.timeoutSeconds, DEFAULT_TIMEOUT_SECONDS),
+        ), // V7.5 Breaker: max 15s
         cacheTtlMs: resolveCacheTtlMs(fetch?.cacheTtlMinutes, DEFAULT_CACHE_TTL_MINUTES),
         userAgent,
         readabilityEnabled,

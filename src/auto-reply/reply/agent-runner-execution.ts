@@ -590,6 +590,104 @@ export async function runAgentTurnWithFallback(params: {
     }
   }
 
+  // V7.5 Router & Auditor Interceptor
+  const combinedPayloadText = runResult.payloads?.map((p) => p.text || "").join("\n") || "";
+  const upgradeMatch = /<REQUEST_UPGRADE\s+model="([^"]+)">([\s\S]*?)<\/REQUEST_UPGRADE>/i.exec(
+    combinedPayloadText,
+  );
+
+  if (upgradeMatch) {
+    const targetModelId = upgradeMatch[1].trim();
+    const upgradeTask = upgradeMatch[2].trim();
+    const [upProvider, ...upModelParts] = targetModelId.split("/");
+    const upModel = upModelParts.join("/");
+
+    defaultRuntime.error(
+      `[Auditor] Intercepted upgrade request for ${targetModelId}. Task: ${upgradeTask.substring(0, 50)}...`,
+    );
+
+    const tempSessionId = crypto.randomUUID();
+    const tempSessionFile = resolveSessionTranscriptPath(tempSessionId, "main");
+
+    const highTierResult = await runEmbeddedPiAgent({
+      sessionId: tempSessionId,
+      sessionKey: undefined,
+      messageProvider: params.sessionCtx.Provider?.trim().toLowerCase() || undefined,
+      agentAccountId: params.sessionCtx.AccountId,
+      messageTo: params.sessionCtx.OriginatingTo ?? params.sessionCtx.To,
+      messageThreadId: params.sessionCtx.MessageThreadId ?? undefined,
+      groupId: resolveGroupSessionKey(params.sessionCtx)?.id,
+      groupChannel:
+        params.sessionCtx.GroupChannel?.trim() ?? params.sessionCtx.GroupSubject?.trim(),
+      groupSpace: params.sessionCtx.GroupSpace?.trim() ?? undefined,
+      senderId: params.sessionCtx.SenderId?.trim() || undefined,
+      senderName: params.sessionCtx.SenderName?.trim() || undefined,
+      senderUsername: params.sessionCtx.SenderUsername?.trim() || undefined,
+      senderE164: params.sessionCtx.SenderE164?.trim() || undefined,
+      ...buildThreadingToolContext({
+        sessionCtx: params.sessionCtx,
+        config: params.followupRun.run.config,
+        hasRepliedRef: params.opts?.hasRepliedRef,
+      }),
+      sessionFile: tempSessionFile,
+      workspaceDir: params.followupRun.run.workspaceDir,
+      agentDir: params.followupRun.run.agentDir,
+      config: params.followupRun.run.config,
+      skillsSnapshot: params.followupRun.run.skillsSnapshot,
+      prompt: upgradeTask,
+      extraSystemPrompt: params.followupRun.run.extraSystemPrompt,
+      ownerNumbers: params.followupRun.run.ownerNumbers,
+      enforceFinalTag: resolveEnforceFinalTag(params.followupRun.run, upProvider),
+      provider: upProvider,
+      model: upModel,
+      thinkLevel: params.followupRun.run.thinkLevel,
+      verboseLevel: params.followupRun.run.verboseLevel,
+      reasoningLevel: params.followupRun.run.reasoningLevel,
+      execOverrides: params.followupRun.run.execOverrides,
+      toolResultFormat: (() => {
+        const channel = resolveMessageChannel(
+          params.sessionCtx.Surface,
+          params.sessionCtx.Provider,
+        );
+        return channel && isMarkdownCapableMessageChannel(channel) ? "markdown" : "plain";
+      })(),
+      bashElevated: params.followupRun.run.bashElevated,
+      timeoutMs: params.followupRun.run.timeoutMs,
+      runId: crypto.randomUUID(),
+      images: params.opts?.images,
+    });
+
+    const usage = highTierResult.meta?.agentMeta?.usage;
+    const { resolveModelCostConfig, estimateUsageCost } =
+      await import("../../utils/usage-format.js");
+    const costConfig = resolveModelCostConfig({
+      provider: upProvider,
+      model: upModel,
+      config: params.followupRun.run.config,
+    });
+    const costUsd = (usage ? estimateUsageCost({ usage, cost: costConfig }) : 0) ?? 0;
+    const status = highTierResult.meta?.error ? "FAILED" : "SUCCESS";
+
+    const auditMessage = `[审计] 模型: ${targetModelId} | 任务: ${upgradeTask.substring(0, 50).replace(/\n/g, " ")}... | 耗费: ~$${costUsd.toFixed(4)} | 状态: ${status}`;
+
+    const botToken =
+      params.followupRun.run.config?.channels?.telegram?.botToken || process.env.TELEGRAM_BOT_TOKEN;
+    const ceoChatId = process.env.CEO_CHAT_ID || params.followupRun.run.ownerNumbers?.[0];
+
+    if (botToken && ceoChatId) {
+      const { sendMessageTelegram } = await import("../../telegram/send.js");
+      try {
+        await sendMessageTelegram(ceoChatId, auditMessage, { token: botToken });
+      } catch (err) {
+        defaultRuntime.error(`Failed to send Telegram audit log: ${String(err)}`);
+      }
+    }
+
+    runResult = highTierResult;
+    fallbackProvider = upProvider;
+    fallbackModel = upModel;
+  }
+
   return {
     kind: "success",
     runResult,

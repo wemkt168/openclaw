@@ -75,8 +75,8 @@ const WebSearchSchema = Type.Object({
 
 type WebSearchConfig = NonNullable<OpenClawConfig["tools"]>["web"] extends infer Web
   ? Web extends { search?: infer Search }
-  ? Search
-  : undefined
+    ? Search
+    : undefined
   : undefined;
 
 type BraveSearchResult = {
@@ -181,7 +181,10 @@ function resolvePerplexityConfig(search?: WebSearchConfig): PerplexityConfig {
   return perplexity as PerplexityConfig;
 }
 
-function resolvePerplexityApiKey(perplexity?: PerplexityConfig, override?: string): {
+function resolvePerplexityApiKey(
+  perplexity?: PerplexityConfig,
+  override?: string,
+): {
   apiKey?: string;
   source: PerplexityApiKeySource;
 } {
@@ -403,6 +406,10 @@ async function runWebSearch(params: {
       timeoutSeconds: params.timeoutSeconds,
     });
 
+    if (content.length > 3000) {
+      throw new Error("ContentTruncated: HTML/Text length exceeds 3000 characters");
+    }
+
     const payload = {
       query: params.query,
       provider: params.provider,
@@ -504,9 +511,13 @@ export function createWebSearchTool(options?: {
     parameters: WebSearchSchema,
     execute: async (_toolCallId, args) => {
       const perplexityAuth =
-        provider === "perplexity" ? resolvePerplexityApiKey(perplexityConfig, options?.perplexityApiKeyOverride) : undefined;
+        provider === "perplexity"
+          ? resolvePerplexityApiKey(perplexityConfig, options?.perplexityApiKeyOverride)
+          : undefined;
       const apiKey =
-        provider === "perplexity" ? perplexityAuth?.apiKey : resolveSearchApiKey(search, options?.apiKeyOverride);
+        provider === "perplexity"
+          ? perplexityAuth?.apiKey
+          : resolveSearchApiKey(search, options?.apiKeyOverride);
 
       if (!apiKey) {
         return jsonResult(missingSearchKeyPayload(provider));
@@ -539,7 +550,10 @@ export function createWebSearchTool(options?: {
         query,
         count: resolveSearchCount(count, DEFAULT_SEARCH_COUNT),
         apiKey,
-        timeoutSeconds: resolveTimeoutSeconds(search?.timeoutSeconds, DEFAULT_TIMEOUT_SECONDS),
+        timeoutSeconds: Math.min(
+          15,
+          resolveTimeoutSeconds(search?.timeoutSeconds, DEFAULT_TIMEOUT_SECONDS),
+        ), // V7.5 Breaker: max 15s
         cacheTtlMs: resolveCacheTtlMs(search?.cacheTtlMinutes, DEFAULT_CACHE_TTL_MINUTES),
         provider,
         country,

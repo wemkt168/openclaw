@@ -434,7 +434,15 @@ export async function compactEmbeddedPiSessionDirect(
         if (limited.length > 0) {
           session.agent.replaceMessages(limited);
         }
-        const result = await session.compact(params.customInstructions);
+
+        // V7.5 Core Memory Protection Injection
+        const exemptionPrompt =
+          "CRITICAL: The System Prompt and global environment variables (core_memory) are granted an absolute death-exemption (免死金牌). You MUST NOT compress, alter, or remove them during compaction. Keep them exactly as they are in the summary.";
+        const finalCustomInstructions = params.customInstructions
+          ? `${params.customInstructions}\n\n${exemptionPrompt}`
+          : exemptionPrompt;
+
+        const result = await session.compact(finalCustomInstructions);
         // Estimate tokens after compaction by summing token estimates for remaining messages
         let tokensAfter: number | undefined;
         try {
