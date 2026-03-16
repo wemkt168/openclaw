@@ -604,9 +604,9 @@ export async function runAgentTurnWithFallback(params: {
 
   // V7.5 Router & Auditor Interceptor
   const combinedPayloadText = runResult.payloads?.map((p) => p.text || "").join("\n") || "";
-  const upgradeMatch = /<REQUEST_UPGRADE\s+model="([^"]+)">([\s\S]*?)<\/REQUEST_UPGRADE>/i.exec(
-    combinedPayloadText,
-  );
+  // Bug 1: 防弹级正则 (Bulletproof Regex) - 兼容 Markdown 代码块、换行和大小写
+  const upgradeRegex = /[\s\S]*?<REQUEST_UPGRADE\s+model=["']([^"']+)["'][^>]*>([\s\S]*?)<\/REQUEST_UPGRADE>[\s\S]*/i;
+  const upgradeMatch = upgradeRegex.exec(combinedPayloadText);
 
   if (upgradeMatch) {
     let targetModelId = upgradeMatch[1].trim();
@@ -725,20 +725,28 @@ export async function runAgentTurnWithFallback(params: {
       highTierResult.payloads = [{ text: auditMessage }];
     }
 
-    // 强杀逻辑 (Force Kill) & 暴力注入 (Direct Injection)
-    // At this point, highTierResult.payloads already contains the auditMessage
+    // Bug 3: 强杀逻辑 (Force Kill) & 暴力注入 (Direct Injection)
+    // Directly inject high-tier payloads into the block reply pipeline
     const finalPayloads = highTierResult.payloads || [];
 
-    // 直接注入管道 (Direct Injection)
+    // 直接注入消息流管道 (Real-time Web UI Data Injection)
     if (params.blockReplyPipeline) {
       for (const payload of finalPayloads) {
+        // 显式触发 assistant 事件同步到 Web UI 缓冲区
+        if (payload.text) {
+          emitAgentEvent({
+            runId,
+            stream: "assistant",
+            data: { text: payload.text },
+          });
+        }
         params.blockReplyPipeline.enqueue(payload);
       }
       await params.blockReplyPipeline.flush({ force: true });
     }
 
-    // 抛出强杀信号 (Force Kill)
-    // We pass the first payload as the representative result for the finalize call
+    // 抛出强杀信号 (Force Kill Signal)
+    // 传递首个 Payload 作为代表，确保 finalize 流程能提取到有效数据
     throw new InterceptionInterrupt(finalPayloads[0] || { text: auditMessage });
   }
 
