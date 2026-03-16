@@ -602,152 +602,168 @@ export async function runAgentTurnWithFallback(params: {
     }
   }
 
-  // V7.5 Router & Auditor Interceptor
-  const combinedPayloadText = runResult.payloads?.map((p) => p.text || "").join("\n") || "";
-  // Bug 1: 防弹级正则 (Bulletproof Regex) - 兼容 Markdown 代码块、换行和大小写
-  const upgradeRegex = /[\s\S]*?<REQUEST_UPGRADE\s+model=["']([^"']+)["'][^>]*>([\s\S]*?)<\/REQUEST_UPGRADE>[\s\S]*/i;
-  const upgradeMatch = upgradeRegex.exec(combinedPayloadText);
+  // V7.5 Router & Auditor Interceptor (Safe Guarded)
+  try {
+    const combinedPayloadText = runResult.payloads?.map((p) => p.text || "").join("\n") || "";
 
-  if (upgradeMatch) {
-    let targetModelId = upgradeMatch[1].trim();
-    const upgradeTask = upgradeMatch[2].trim();
-
-    if (targetModelId.toLowerCase() === "deepseek") {
-      targetModelId = "openrouter/deepseek/deepseek-chat";
-    } else if (targetModelId.toLowerCase() === "sonnet") {
-      targetModelId = "openrouter/anthropic/claude-3.7-sonnet";
-    }
-
-    const [upProvider, ...upModelParts] = targetModelId.split("/");
-    const upModel = upModelParts.join("/");
-
-    defaultRuntime.error(
-      `[Auditor] Intercepted upgrade request for ${targetModelId}. Task: ${upgradeTask.substring(0, 50)}...`,
-    );
-
-    const tempSessionId = crypto.randomUUID();
-    const tempSessionFile = resolveSessionTranscriptPath(tempSessionId, "main");
-
-    const highTierResult = await runEmbeddedPiAgent({
-      sessionId: tempSessionId,
-      sessionKey: undefined,
-      messageProvider: params.sessionCtx.Provider?.trim().toLowerCase() || undefined,
-      agentAccountId: params.sessionCtx.AccountId,
-      messageTo: params.sessionCtx.OriginatingTo ?? params.sessionCtx.To,
-      messageThreadId: params.sessionCtx.MessageThreadId ?? undefined,
-      groupId: resolveGroupSessionKey(params.sessionCtx)?.id,
-      groupChannel:
-        params.sessionCtx.GroupChannel?.trim() ?? params.sessionCtx.GroupSubject?.trim(),
-      groupSpace: params.sessionCtx.GroupSpace?.trim() ?? undefined,
-      senderId: params.sessionCtx.SenderId?.trim() || undefined,
-      senderName: params.sessionCtx.SenderName?.trim() || undefined,
-      senderUsername: params.sessionCtx.SenderUsername?.trim() || undefined,
-      senderE164: params.sessionCtx.SenderE164?.trim() || undefined,
-      ...buildThreadingToolContext({
-        sessionCtx: params.sessionCtx,
-        config: params.followupRun.run.config,
-        hasRepliedRef: params.opts?.hasRepliedRef,
-      }),
-      sessionFile: tempSessionFile,
-      workspaceDir: params.followupRun.run.workspaceDir,
-      agentDir: params.followupRun.run.agentDir,
-      config: params.followupRun.run.config,
-      skillsSnapshot: params.followupRun.run.skillsSnapshot,
-      prompt: upgradeTask,
-      extraSystemPrompt: params.followupRun.run.extraSystemPrompt,
-      ownerNumbers: params.followupRun.run.ownerNumbers,
-      enforceFinalTag: resolveEnforceFinalTag(params.followupRun.run, upProvider),
-      provider: upProvider,
-      model: upModel,
-      thinkLevel: params.followupRun.run.thinkLevel,
-      verboseLevel: params.followupRun.run.verboseLevel,
-      reasoningLevel: params.followupRun.run.reasoningLevel,
-      execOverrides: params.followupRun.run.execOverrides,
-      toolResultFormat: (() => {
-        const channel = resolveMessageChannel(
-          params.sessionCtx.Surface,
-          params.sessionCtx.Provider,
-        );
-        return channel && isMarkdownCapableMessageChannel(channel) ? "markdown" : "plain";
-      })(),
-      bashElevated: params.followupRun.run.bashElevated,
-      timeoutMs: params.followupRun.run.timeoutMs,
-      runId: crypto.randomUUID(),
-      images: params.opts?.images,
-      // 核心修复：信号脱钩 (Signal Detachment)
-      // 绝不继承 params.followupRun.run.abortSignal
-      // 这确保了即便 Flash 被强杀抛出异常，DeepSeek 的网络请求依然能跑完
-      abortSignal: undefined,
-    });
-
-    if (highTierResult.meta?.error) {
-      defaultRuntime.error(
-        `[Auditor] High-tier execution FAILED: ${String(highTierResult.meta.error)}`,
-      );
-    }
-
-    const usage = highTierResult.meta?.agentMeta?.usage;
-    const { resolveModelCostConfig, estimateUsageCost } =
-      await import("../../utils/usage-format.js");
-    const costConfig = resolveModelCostConfig({
-      provider: upProvider,
-      model: upModel,
-      config: params.followupRun.run.config,
-    });
-    const costUsd = (usage ? estimateUsageCost({ usage, cost: costConfig }) : 0) ?? 0;
-    const status = highTierResult.meta?.error ? "FAILED" : "SUCCESS";
-
-    const auditMessage = `\n\n---\n[审计] 模型: ${targetModelId} | 任务: ${upgradeTask.substring(0, 50).replace(/\n/g, " ")}... | 耗费: ~$${costUsd.toFixed(4)} | 状态: ${status}`;
-
-    const botToken =
-      params.followupRun.run.config?.channels?.telegram?.botToken || process.env.TELEGRAM_BOT_TOKEN;
-    const ceoChatId = process.env.CEO_CHAT_ID || params.followupRun.run.ownerNumbers?.[0];
-
-    if (botToken && ceoChatId) {
-      const { sendMessageTelegram } = await import("../../telegram/send.js");
-      try {
-        await sendMessageTelegram(ceoChatId, auditMessage.trim(), { token: botToken });
-      } catch (err) {
-        defaultRuntime.error(`Failed to send Telegram audit log: ${String(err)}`);
-      }
-    }
-
-    if (highTierResult.payloads && highTierResult.payloads.length > 0) {
-      // Append the audit message to the final payload text so it renders in the Web UI
-      const lastIdx = highTierResult.payloads.length - 1;
-      const lastPayload = highTierResult.payloads[lastIdx];
-      highTierResult.payloads[lastIdx] = {
-        ...lastPayload,
-        text: (lastPayload.text || "") + auditMessage,
-      };
+    // 严格类型校验：防止非字符串导致正则崩溃 (Anti-TypeError Wall)
+    if (typeof combinedPayloadText !== "string") {
+      defaultRuntime.error("[Auditor] Skip: Combined payload is not a valid string");
     } else {
-      // Fallback if no payloads were generated, inject a new one
-      highTierResult.payloads = [{ text: auditMessage }];
-    }
+      // Bug 1: 防弹级正则 (Bulletproof Regex) - 兼容 Markdown 代码块、换行和大小写
+      const upgradeRegex =
+        /[\s\S]*?<REQUEST_UPGRADE\s+model=["']([^"']+)["'][^>]*>([\s\S]*?)<\/REQUEST_UPGRADE>[\s\S]*/i;
+      const upgradeMatch = upgradeRegex.exec(combinedPayloadText);
 
-    // Bug 3: 强杀逻辑 (Force Kill) & 暴力注入 (Direct Injection)
-    // Directly inject high-tier payloads into the block reply pipeline
-    const finalPayloads = highTierResult.payloads || [];
+      if (upgradeMatch) {
+        let targetModelId = upgradeMatch[1].trim();
+        const upgradeTask = upgradeMatch[2].trim();
 
-    // 直接注入消息流管道 (Real-time Web UI Data Injection)
-    if (params.blockReplyPipeline) {
-      for (const payload of finalPayloads) {
-        // 显式触发 assistant 事件同步到 Web UI 缓冲区
-        if (payload.text) {
-          emitAgentEvent({
-            runId,
-            stream: "assistant",
-            data: { text: payload.text },
-          });
+        if (targetModelId.toLowerCase() === "deepseek") {
+          targetModelId = "openrouter/deepseek/deepseek-chat";
+        } else if (targetModelId.toLowerCase() === "sonnet") {
+          targetModelId = "openrouter/anthropic/claude-3.7-sonnet";
         }
-        params.blockReplyPipeline.enqueue(payload);
-      }
-      await params.blockReplyPipeline.flush({ force: true });
-    }
 
-    // 抛出强杀信号 (Force Kill Signal)
-    // 传递首个 Payload 作为代表，确保 finalize 流程能提取到有效数据
-    throw new InterceptionInterrupt(finalPayloads[0] || { text: auditMessage });
+        const [upProvider, ...upModelParts] = targetModelId.split("/");
+        const upModel = upModelParts.join("/");
+
+        defaultRuntime.error(
+          `[Auditor] Intercepted upgrade request for ${targetModelId}. Task: ${upgradeTask.substring(0, 50)}...`,
+        );
+
+        const tempSessionId = crypto.randomUUID();
+        const tempSessionFile = resolveSessionTranscriptPath(tempSessionId, "main");
+
+        const highTierResult = await runEmbeddedPiAgent({
+          sessionId: tempSessionId,
+          sessionKey: undefined,
+          messageProvider: params.sessionCtx.Provider?.trim().toLowerCase() || undefined,
+          agentAccountId: params.sessionCtx.AccountId,
+          messageTo: params.sessionCtx.OriginatingTo ?? params.sessionCtx.To,
+          messageThreadId: params.sessionCtx.MessageThreadId ?? undefined,
+          groupId: resolveGroupSessionKey(params.sessionCtx)?.id,
+          groupChannel:
+            params.sessionCtx.GroupChannel?.trim() ?? params.sessionCtx.GroupSubject?.trim(),
+          groupSpace: params.sessionCtx.GroupSpace?.trim() ?? undefined,
+          senderId: params.sessionCtx.SenderId?.trim() || undefined,
+          senderName: params.sessionCtx.SenderName?.trim() || undefined,
+          senderUsername: params.sessionCtx.SenderUsername?.trim() || undefined,
+          senderE164: params.sessionCtx.SenderE164?.trim() || undefined,
+          ...buildThreadingToolContext({
+            sessionCtx: params.sessionCtx,
+            config: params.followupRun.run.config,
+            hasRepliedRef: params.opts?.hasRepliedRef,
+          }),
+          sessionFile: tempSessionFile,
+          workspaceDir: params.followupRun.run.workspaceDir,
+          agentDir: params.followupRun.run.agentDir,
+          config: params.followupRun.run.config,
+          skillsSnapshot: params.followupRun.run.skillsSnapshot,
+          prompt: upgradeTask,
+          extraSystemPrompt: params.followupRun.run.extraSystemPrompt,
+          ownerNumbers: params.followupRun.run.ownerNumbers,
+          enforceFinalTag: resolveEnforceFinalTag(params.followupRun.run, upProvider),
+          provider: upProvider,
+          model: upModel,
+          thinkLevel: params.followupRun.run.thinkLevel,
+          verboseLevel: params.followupRun.run.verboseLevel,
+          reasoningLevel: params.followupRun.run.reasoningLevel,
+          execOverrides: params.followupRun.run.execOverrides,
+          toolResultFormat: (() => {
+            const channel = resolveMessageChannel(
+              params.sessionCtx.Surface,
+              params.sessionCtx.Provider,
+            );
+            return channel && isMarkdownCapableMessageChannel(channel) ? "markdown" : "plain";
+          })(),
+          bashElevated: params.followupRun.run.bashElevated,
+          timeoutMs: params.followupRun.run.timeoutMs,
+          runId: crypto.randomUUID(),
+          images: params.opts?.images,
+          // 核心修复：信号脱钩 (Signal Detachment)
+          // 绝不继承 params.followupRun.run.abortSignal
+          // 这确保了即便 Flash 被强杀抛出异常，DeepSeek 的网络请求依然能跑完
+          abortSignal: undefined,
+        });
+
+        if (highTierResult.meta?.error) {
+          defaultRuntime.error(
+            `[Auditor] High-tier execution FAILED: ${String(highTierResult.meta.error)}`,
+          );
+        }
+
+        const usage = highTierResult.meta?.agentMeta?.usage;
+        const { resolveModelCostConfig, estimateUsageCost } = await import(
+          "../../utils/usage-format.js"
+        );
+        const costConfig = resolveModelCostConfig({
+          provider: upProvider,
+          model: upModel,
+          config: params.followupRun.run.config,
+        });
+        const costUsd = (usage ? estimateUsageCost({ usage, cost: costConfig }) : 0) ?? 0;
+        const status = highTierResult.meta?.error ? "FAILED" : "SUCCESS";
+
+        const auditMessage = `\n\n---\n[审计] 模型: ${targetModelId} | 任务: ${upgradeTask.substring(0, 50).replace(/\n/g, " ")}... | 耗费: ~$${costUsd.toFixed(4)} | 状态: ${status}`;
+
+        const botToken =
+          params.followupRun.run.config?.channels?.telegram?.botToken ||
+          process.env.TELEGRAM_BOT_TOKEN;
+        const ceoChatId = process.env.CEO_CHAT_ID || params.followupRun.run.ownerNumbers?.[0];
+
+        if (botToken && ceoChatId) {
+          const { sendMessageTelegram } = await import("../../telegram/send.js");
+          try {
+            await sendMessageTelegram(ceoChatId, auditMessage.trim(), { token: botToken });
+          } catch (err) {
+            defaultRuntime.error(`Failed to send Telegram audit log: ${String(err)}`);
+          }
+        }
+
+        if (highTierResult.payloads && highTierResult.payloads.length > 0) {
+          // Append the audit message to the final payload text so it renders in the Web UI
+          const lastIdx = highTierResult.payloads.length - 1;
+          const lastPayload = highTierResult.payloads[lastIdx];
+          highTierResult.payloads[lastIdx] = {
+            ...lastPayload,
+            text: (lastPayload.text || "") + auditMessage,
+          };
+        } else {
+          // Fallback if no payloads were generated, inject a new one
+          highTierResult.payloads = [{ text: auditMessage }];
+        }
+
+        // Bug 3: 强杀逻辑 (Force Kill) & 暴力注入 (Direct Injection)
+        // Directly inject high-tier payloads into the block reply pipeline
+        const finalPayloads = highTierResult.payloads || [];
+
+        // 直接注入消息流管道 (Real-time Web UI Data Injection)
+        if (params.blockReplyPipeline) {
+          for (const payload of finalPayloads) {
+            // 显式触发 assistant 事件同步到 Web UI 缓冲区
+            if (payload.text) {
+              emitAgentEvent({
+                runId,
+                stream: "assistant",
+                data: { text: payload.text },
+              });
+            }
+            params.blockReplyPipeline.enqueue(payload);
+          }
+          await params.blockReplyPipeline.flush({ force: true });
+        }
+
+        // 抛出强杀信号 (Force Kill Signal)
+        // 传递首个 Payload 作为代表，确保 finalize 流程能提取到有效数据
+        throw new InterceptionInterrupt(finalPayloads[0] || { text: auditMessage });
+      }
+    }
+  } catch (err) {
+    if (err instanceof InterceptionInterrupt) {
+      throw err;
+    }
+    defaultRuntime.error(`[Auditor Critical Wall] Interceptor crashed: ${String(err)}`);
   }
 
   return {
