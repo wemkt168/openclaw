@@ -617,7 +617,13 @@ export async function runAgentTurnWithFallback(params: {
 
       if (upgradeMatch) {
         let targetModelId = upgradeMatch[1].trim();
-        const upgradeTask = "Continue with higher reasoning based on context."; // 默认任务描述
+        // 🔥 修复“耳聋”：透传真实历史上下文 (Real Context Pass-through)
+        const sessionsMod = (await import("../../config/sessions.js")) as any;
+        const loadSessionTranscript = sessionsMod.loadSessionTranscript;
+        const transcript = loadSessionTranscript ? await loadSessionTranscript(params.followupRun.run.sessionFile) : { messages: [] };
+        const historyMessages = transcript.messages || [];
+        const lastUserMessage = [...historyMessages].reverse().find(m => m.role === 'user');
+        const upgradeTask = lastUserMessage?.content || "Continue with higher reasoning based on context.";
 
         if (targetModelId.toLowerCase() === "deepseek") {
           targetModelId = "openrouter/deepseek/deepseek-chat";
@@ -629,7 +635,7 @@ export async function runAgentTurnWithFallback(params: {
         const upModel = upModelParts.join("/");
 
         defaultRuntime.error(
-          `[Auditor] Intercepted upgrade request for ${targetModelId}. Task: ${upgradeTask.substring(0, 50)}...`,
+          `[Auditor] Intercepted upgrade request for ${targetModelId}. Context depth: ${historyMessages.length}`,
         );
 
         const tempSessionId = crypto.randomUUID();
@@ -681,9 +687,6 @@ export async function runAgentTurnWithFallback(params: {
           timeoutMs: params.followupRun.run.timeoutMs,
           runId: crypto.randomUUID(),
           images: params.opts?.images,
-          // 核心修复：信号脱钩 (Signal Detachment)
-          // 绝不继承 params.followupRun.run.abortSignal
-          // 这确保了即便 Flash 被强杀抛出异常，DeepSeek 的网络请求依然能跑完
           abortSignal: undefined,
         });
 
@@ -705,7 +708,7 @@ export async function runAgentTurnWithFallback(params: {
         const costUsd = (usage ? estimateUsageCost({ usage, cost: costConfig }) : 0) ?? 0;
         const status = highTierResult.meta?.error ? "FAILED" : "SUCCESS";
 
-        const auditMessage = `\n\n---\n[审计] 模型: ${targetModelId} | 任务: ${upgradeTask.substring(0, 50).replace(/\n/g, " ")}... | 耗费: ~$${costUsd.toFixed(4)} | 状态: ${status}`;
+        const auditMessage = `\n\n---\n[审计] 模型: ${targetModelId} | 耗费: ~$${costUsd.toFixed(4)} | 状态: ${status}`;
 
         const botToken =
           params.followupRun.run.config?.channels?.telegram?.botToken ||
@@ -721,42 +724,32 @@ export async function runAgentTurnWithFallback(params: {
           }
         }
 
-        if (highTierResult.payloads && highTierResult.payloads.length > 0) {
-          // Append the audit message to the final payload text so it renders in the Web UI
-          const lastIdx = highTierResult.payloads.length - 1;
-          const lastPayload = highTierResult.payloads[lastIdx];
-          highTierResult.payloads[lastIdx] = {
-            ...lastPayload,
-            text: (lastPayload.text || "") + auditMessage,
-          };
-        } else {
-          // Fallback if no payloads were generated, inject a new one
-          highTierResult.payloads = [{ text: auditMessage }];
-        }
+        const expertContent = (highTierResult.payloads?.map(p => p.text).join('') || "") + auditMessage;
 
-        // Bug 3: 强杀逻辑 (Force Kill) & 暴力注入 (Direct Injection)
-        // Directly inject high-tier payloads into the block reply pipeline
-        const finalPayloads = highTierResult.payloads || [];
-
-        // 直接注入消息流管道 (Real-time Web UI Data Injection)
+        // 🔥 修复“哑巴”：标准 WS 注入 (Standard Protocol Injection)
+        // 使用 emitAgentEvent 进行实时打字机效果广播
         if (params.blockReplyPipeline) {
-          for (const payload of finalPayloads) {
-            // 显式触发 assistant 事件同步到 Web UI 缓冲区
-            if (payload.text) {
-              emitAgentEvent({
-                runId,
-                stream: "assistant",
-                data: { text: payload.text },
-              });
-            }
-            params.blockReplyPipeline.enqueue(payload);
-          }
+          // 1. 广播实时打字流（用于打字机效果）
+          emitAgentEvent({
+            runId: params.opts?.runId ?? crypto.randomUUID(), 
+            stream: "assistant",
+            data: { text: expertContent },
+          });
+
+          // 2. 构造标准消息 Payload 并入队（用于渲染和数据库持久化）
+          const standardPayload = {
+            role: "assistant",
+            text: expertContent,
+            content: expertContent,
+            createdAt: new Date().toISOString(),
+          };
+          
+          params.blockReplyPipeline.enqueue(standardPayload);
           await params.blockReplyPipeline.flush({ force: true });
         }
 
-        // 抛出强杀信号 (Force Kill Signal)
-        // 传递首个 Payload 作为代表，确保 finalize 流程能提取到有效数据
-        throw new InterceptionInterrupt(finalPayloads[0] || { text: auditMessage });
+        // 抛出强杀信号
+        throw new InterceptionInterrupt({ text: expertContent });
       }
     }
   } catch (err) {
