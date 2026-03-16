@@ -610,14 +610,14 @@ export async function runAgentTurnWithFallback(params: {
     if (typeof combinedPayloadText !== "string") {
       defaultRuntime.error("[Auditor] Skip: Combined payload is not a valid string");
     } else {
-      // Bug 1: 防弹级正则 (Bulletproof Regex) - 兼容 Markdown 代码块、换行和大小写
-      const upgradeRegex =
-        /[\s\S]*?<REQUEST_UPGRADE\s+model=["']([^"']+)["'][^>]*>([\s\S]*?)<\/REQUEST_UPGRADE>[\s\S]*/i;
+      // SOUL.md V7.6 暗号同步：中括号防转义版本
+      // 捕获形如 [REQUEST_UPGRADE: deepseek] 或 [REQUEST_UPGRADE: sonnet] 的标签
+      const upgradeRegex = /\[REQUEST_UPGRADE:\s*([^\]]+)\]/i;
       const upgradeMatch = upgradeRegex.exec(combinedPayloadText);
 
       if (upgradeMatch) {
         let targetModelId = upgradeMatch[1].trim();
-        const upgradeTask = upgradeMatch[2].trim();
+        const upgradeTask = "Continue with higher reasoning based on context."; // 默认任务描述
 
         if (targetModelId.toLowerCase() === "deepseek") {
           targetModelId = "openrouter/deepseek/deepseek-chat";
